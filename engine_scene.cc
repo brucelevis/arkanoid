@@ -11,7 +11,7 @@
 #include "audio_manager.h"
 
 /// collision handler
-cpBool Collision(cpArbiter *arbiter, cpSpace *space, void *data) {
+void Collision(cpArbiter *arbiter, cpSpace *space, void *data) {
 
   cpBody* body;
   cpShape* a = NULL;
@@ -24,31 +24,53 @@ cpBool Collision(cpArbiter *arbiter, cpSpace *space, void *data) {
          cpShapeGetCollisionType(a),
          cpShapeGetCollisionType(b));
 
-  /*
+  // brick collision
   if (cpShapeGetCollisionType(a) == BRICK_TAG){
     body = cpShapeGetBody(a);
+    cpBodySetPosition(body, { -100.0f, -100.0f });
+    cpShapeFree(b);
     cpBodyFree(body);
     *updating = 1;
   }
-  if (cpShapeGetCollisionType(b) == BRICK_TAG){
+  else if (cpShapeGetCollisionType(b) == BRICK_TAG){
     body = cpShapeGetBody(b);
+    cpBodySetPosition(body, { -100.0f, -100.0f });
+    cpShapeFree(b);
     cpBodyFree(body);
     *updating = 1;
   }
 
+  // limit collision
   if (cpShapeGetCollisionType(a) == LIMIT_TAG){
     body = cpShapeGetBody(a);
+    cpBodySetPosition(body, { -100.0f, -100.0f });
+    cpShapeFree(b);
     cpBodyFree(body);
     *updating = 2;
   }
-  if (cpShapeGetCollisionType(b) == LIMIT_TAG){
+  else if (cpShapeGetCollisionType(b) == LIMIT_TAG){
     body = cpShapeGetBody(b);
+    cpBodySetPosition(body, { -100.0f, -100.0f });
+    cpShapeFree(b);
     cpBodyFree(body);
     *updating = 2;
   }
-  */
 
-  return cpTrue;
+  // wall collision
+  if (cpShapeGetCollisionType(a) == WALL_TAG){
+    *updating = 3;
+  }
+  else if (cpShapeGetCollisionType(b) == WALL_TAG){
+    *updating = 3;
+  }
+
+  // powerup collision
+  if (cpShapeGetCollisionType(a) == POWERUP_TAG){
+    *updating = 4;
+  }
+  else if (cpShapeGetCollisionType(b) == POWERUP_TAG){
+    *updating = 4;
+  }
 }
 
 /// constructor
@@ -61,16 +83,20 @@ EngineScene::EngineScene() {
   for (unsigned short int i = 0; i < 4; i++){
     wall_[i] = new GameObject2D();
   }
-  bricks_ = nullptr;
+  for (unsigned short int i = 0; i < (kGridCols * kGridRows); i++){
+    bricks_[i] = nullptr;
+  }
   level_ = new Text();
   score_ = new Text();
   updating_ = 0;
   total_levels_ = 0;
   current_level_ = 0;
-  life_num_ = 0;
+  lifes_amount_ = 0;
   score_amount_ = 0;
-  brick_num_ = 0;
-  grid_ = nullptr;
+  bricks_amount_ = 0;
+  for (unsigned short int i = 0; i < (kGridCols * kGridRows); i++){
+    grid_[i] = 0;
+  }
   ball_speed_ = 0.0f;
   is_joint_ = false;
 }
@@ -82,32 +108,36 @@ void EngineScene::initMap() {
   lua.init("config.lua");
 
   // walls (up, down, left, right)
-  wall_[0]->init(space_, 1.0f, 1.0f, false);
+  wall_[0]->init(space_, 1.0f, 1.0f, kBodyKind_Static);
   wall_[0]->addBodySprite("data/assets/sprites/wall_h.png",
                           { 400.0f, 90.0f, 1.0f },
-                          10.0f,
-                          0.0f);
+                          lua.getNumberFromTable("wall_settings", "mass"),
+                          lua.getNumberFromTable("wall_settings", "friction"));
+  wall_[0]->set_elasticity(lua.getNumberFromTable("wall_settings", "elasticity"));
   wall_[0]->set_tag(WALL_TAG);
 
-  wall_[1]->init(space_, 1.0f, 1.0f, false);
+  wall_[1]->init(space_, 1.0f, 1.0f, kBodyKind_Static);
   wall_[1]->addBodySprite("data/assets/sprites/wall_h.png",
                           { 400.0f, 770.0f, 1.0f },
-                          10.0f,
-                          0.0f);
+                          lua.getNumberFromTable("wall_settings", "mass"),
+                          lua.getNumberFromTable("wall_settings", "friction"));
+  wall_[1]->set_elasticity(lua.getNumberFromTable("wall_settings", "elasticity"));
   wall_[1]->set_tag(LIMIT_TAG);
 
-  wall_[2]->init(space_, 1.0f, 1.0f, false);
+  wall_[2]->init(space_, 1.0f, 1.0f, kBodyKind_Static);
   wall_[2]->addBodySprite("data/assets/sprites/wall_v.png",
                           { 30.0f, 430.0f, 1.0f },
-                          10.0f,
-                          0.0f);
+                          lua.getNumberFromTable("wall_settings", "mass"),
+                          lua.getNumberFromTable("wall_settings", "friction"));
+  wall_[2]->set_elasticity(lua.getNumberFromTable("wall_settings", "elasticity"));
   wall_[2]->set_tag(WALL_TAG);
 
-  wall_[3]->init(space_, 1.0f, 1.0f, false);
+  wall_[3]->init(space_, 1.0f, 1.0f, kBodyKind_Static);
   wall_[3]->addBodySprite("data/assets/sprites/wall_v.png",
                           { 770.0f, 430.0f, 1.0f },
-                          10.0f,
-                          0.0f);
+                          lua.getNumberFromTable("wall_settings", "mass"),
+                          lua.getNumberFromTable("wall_settings", "friction"));
+  wall_[3]->set_elasticity(lua.getNumberFromTable("wall_settings", "elasticity"));
   wall_[3]->set_tag(WALL_TAG);
 
   // bar
@@ -139,15 +169,15 @@ void EngineScene::initMap() {
   // settings
   total_levels_ = lua.getGlobalNumber("kTotalLevels");
   current_level_ = 1;
-  life_num_ = 3;
+  lifes_amount_ = 3;
   is_joint_ = true;
   game_status_ = kGameStatus_Start;
 }
 
 void EngineScene::initTexts() {
 
-  level_->init("LEVEL 1", { 450.0f, 60.0f });
-  score_->init("SCORE          0\0", { 588.0f, 60.0f });
+  level_->init("LEVEL 1\0", { 450.0f, 60.0f });
+  score_->init("SCORE 0\0", { 650.0f, 60.0f });
 }
 
 void EngineScene::levelDump(unsigned short int level) {
@@ -161,25 +191,22 @@ void EngineScene::levelDump(unsigned short int level) {
   LuaWrapper lua;
   lua.init("config.lua");
 
-  brick_num_ = lua.getIntegerFromTableByIndex(buffer, 0);
-  bricks_ = (GameObject2D**)malloc(sizeof(GameObject2D) * brick_num_);
-  grid_ = (unsigned short int*)malloc(sizeof(unsigned short int) * brick_num_);
-
-  for (unsigned short int i = 0; i < brick_num_; i++){
-    grid_[i] = lua.getIntegerFromTableByIndex(buffer, i + 1);
+  for (unsigned short int i = 0; i < (kGridCols * kGridRows); i++){
+    grid_[i] = lua.getIntegerFromTableByIndex(buffer, i);
     bricks_[i] = nullptr;
   }
 
+  bricks_amount_ = 0;
   float x_offset = 170.0f;
   float y_offset = 200.0f;
-  for (unsigned short int i = 0; i < brick_num_; i++){
+  for (unsigned short int i = 0; i < (kGridCols * kGridRows); i++){
     if (i % kGridCols == 0 && i != 0){
       x_offset = 170.0f;
       y_offset += 30.0f;
     }
     if (grid_[i] != 0){
       bricks_[i] = new GameObject2D();
-      bricks_[i]->init(space_, 1.0f, 1.0f, false);
+      bricks_[i]->init(space_, 1.0f, 1.0f, kBodyKind_Static);
       memset(buffer, 0, 128);
       memset(number, 0, 8);
       sprintf(buffer, "data/assets/sprites/brick");
@@ -187,9 +214,14 @@ void EngineScene::levelDump(unsigned short int level) {
       strcat(buffer, number);
       bricks_[i]->addBodySprite(buffer,
                                 { x_offset, y_offset, 1.0f },
-                                10.0f,
-                                0.0f);
+                                lua.getNumberFromTable("brick_settings",
+                                                       "mass"),
+                                lua.getNumberFromTable("brick_settings",
+                                                       "friction"));
+      bricks_[i]->set_elasticity(lua.getNumberFromTable("brick_settings",
+                                                        "elasticity"));
       bricks_[i]->set_tag(BRICK_TAG);
+      bricks_amount_++;
     }
     x_offset += 50.0f;
   }
@@ -210,49 +242,93 @@ void EngineScene::init() {
   handler = cpSpaceAddCollisionHandler(space_, BALL_TAG, LIMIT_TAG);
   handler = cpSpaceAddCollisionHandler(space_, BALL_TAG, BAR_TAG);
   */
-  handler->beginFunc = Collision;
+  handler->separateFunc = Collision;
   handler->userData = &updating_;
 
   /// generate elements
   initMap();
   initTexts();
   levelDump(1);
+
+  AUDIOMANAGER.playFX(0, 1.0f);
 }
 
-/** input functions **/
-void EngineScene::inputBar() {
+//-------------------------------------------------------------------------//
+//                                  INPUT                                  //
+//-------------------------------------------------------------------------//
+void EngineScene::input() {
 
-  if (ESAT::IsSpecialKeyDown(ESAT::kSpecialKey_Space)){
-    gtmath::Vec3 velocity = (gtmath::Vec3Right() -
-                             gtmath::Vec3Up()) *
-                             ball_speed_;
-    ball_->set_velocity(velocity);
+  switch (game_status_){
+    case kGameStatus_Start: {
 
-    is_joint_ = false;
-  }
-  else if (ESAT::IsSpecialKeyPressed(ESAT::kSpecialKey_Left)){
-    gtmath::Vec3 velocity = gtmath::Vec3Right() * -kBarSpeed;
-    bar_->addForce(velocity);
-  }
-  else if (ESAT::IsSpecialKeyPressed(ESAT::kSpecialKey_Right)){
-    gtmath::Vec3 velocity = gtmath::Vec3Right() * kBarSpeed;
-    bar_->addForce(velocity);
+      if (ESAT::IsSpecialKeyDown(ESAT::kSpecialKey_Space)){
+        gtmath::Vec3 velocity = (gtmath::Vec3Right() -
+                                 gtmath::Vec3Up()) *
+                                 ball_speed_;
+        ball_->set_velocity(velocity);
+
+        is_joint_ = false;
+        game_status_ = kGameStatus_Playing;
+      }
+      else if (ESAT::IsSpecialKeyPressed(ESAT::kSpecialKey_Left)){
+        gtmath::Vec3 velocity = gtmath::Vec3Right() * -kBarSpeed;
+        bar_->addForce(velocity);
+      }
+      else if (ESAT::IsSpecialKeyPressed(ESAT::kSpecialKey_Right)){
+        gtmath::Vec3 velocity = gtmath::Vec3Right() * kBarSpeed;
+        bar_->addForce(velocity);
+      }
+    } break;
+
+    case kGameStatus_Playing: {
+
+      if (ESAT::IsSpecialKeyPressed(ESAT::kSpecialKey_Left)){
+        gtmath::Vec3 velocity = gtmath::Vec3Right() * -kBarSpeed;
+        bar_->addForce(velocity);
+      }
+      else if (ESAT::IsSpecialKeyPressed(ESAT::kSpecialKey_Right)){
+        gtmath::Vec3 velocity = gtmath::Vec3Right() * kBarSpeed;
+        bar_->addForce(velocity);
+      }
+    } break;
+
+    case kGameStatus_Finished: {
+
+      if (ESAT::IsSpecialKeyDown(ESAT::kSpecialKey_Enter)){ resetGame(); }
+
+    } break;
   }
 }
 
-/** update functions **/
+//-------------------------------------------------------------------------//
+//                                 UPDATE                                  //
+//-------------------------------------------------------------------------//
 void EngineScene::updateScene() {
 
   switch (updating_) {
+    // score
     case 1: {
-      brick_num_--;
+      AUDIOMANAGER.playFX(1, 1.0f);
+      bricks_amount_--;
       score_amount_ += 100;
       set_scoreAmount(score_amount_);
       updating_ = 0;
     } break;
+    // die
     case 2: {
-      life_num_--;
+      AUDIOMANAGER.playFX(3, 1.0f);
+      lifes_amount_--;
       resetLevel();
+      updating_ = 0;
+    } break;
+    // bounce
+    case 3: {
+      AUDIOMANAGER.playFX(1, 1.0f);
+      updating_ = 0;
+    } break;
+    // powerup
+    case 4: {
+      AUDIOMANAGER.playFX(2, 1.0f);
       updating_ = 0;
     } break;
   }
@@ -260,7 +336,12 @@ void EngineScene::updateScene() {
 
 void EngineScene::updateBar() {
 
-  bar_->set_position({ bar_->position().x, 700.0f, bar_->position().z });
+  LuaWrapper lua;
+  lua.init("config.lua");
+
+  bar_->set_position({ bar_->position().x,
+                       lua.getNumberFromTable("bar_settings", "y"),
+                       1.0f });
   bar_->update();
 }
 
@@ -270,36 +351,35 @@ void EngineScene::updateBall() {
 
     ball_->set_position({ bar_->position().x,
                           ball_->position().y,
-                          ball_->position().z });
+                          1.0f });
   }
 
-  ball_->set_angle(0.0f);
   ball_->update();
 }
 
 void EngineScene::updateBricks() {
 
-  for (unsigned short int i = 0; i < brick_num_; i++){
+  for (unsigned short int i = 0; i < (kGridCols * kGridRows); i++){
     if (bricks_[i] != nullptr){ bricks_[i]->update(); }
   }
 }
 
-void EngineScene::checkStatus() {
+void EngineScene::update(const double delta_time) {
 
-  if (life_num_ < 1){ game_status_ = kGameStatus_Finished; }
+  updateScene();
+  updateBar();
+  updateBall();
+  updateBricks();
+  checkStatus();
+  showInfo();
 
-  if (brick_num_ < 1){
-    if (current_level_ < total_levels_){
-
-      current_level_++;
-      levelDump(current_level_);
-      resetLevel();
-    }
-    else { game_status_ = kGameStatus_Finished; }
-  }
+  /// update chipmunk space
+  cpSpaceStep(space_, delta_time / 1000.0f);
 }
 
-/** render functions **/
+//-------------------------------------------------------------------------//
+//                                 RENDER                                  //
+//-------------------------------------------------------------------------//
 void EngineScene::renderScenario() {
 
   for(unsigned short int i = 0; i < 4; i++){
@@ -311,7 +391,7 @@ void EngineScene::renderLifes() {
 
   float posx = 46.0f;
 
-  for (unsigned short int i = 0; i < life_num_; i++){
+  for (unsigned short int i = 0; i < lifes_amount_; i++){
     Sprite* lifes = new Sprite();
     lifes->init("data/assets/sprites/bar.png",
                { posx, 50.0f, 1.0f });
@@ -321,7 +401,21 @@ void EngineScene::renderLifes() {
   }
 }
 
-/* GUI */
+void EngineScene::render() {
+
+  ESAT::DrawBegin();
+  ESAT::DrawClear(0, 0, 0);
+
+  renderScenario();
+  renderLifes();
+  HUD();
+  debug();
+
+  ESAT::DrawEnd();
+  ESAT::WindowFrame();
+}
+
+/** GUI **/
 void EngineScene::HUD() {
 
   level_->render();
@@ -330,10 +424,14 @@ void EngineScene::HUD() {
 
 void EngineScene::debug() {
 
-  if (SINGLETON.debug_mode_){
+  if (GAMEMANAGER.debug_mode_){
 
     LuaWrapper lua;
     lua.init("config.lua");
+
+    // game state get values
+    int lifes = lifes_amount_;
+    int bricks = bricks_amount_;
 
     // space get values
     gtmath::Point space_gravity = { cpSpaceGetGravity(space_).x,
@@ -365,6 +463,11 @@ void EngineScene::debug() {
     ImGui::Text("Debugger for Arkanoid");
     ImGuiIO& io = ImGui::GetIO();
     ImGui::Text("Mouse Position: (%g, %g)", io.MousePos.x, io.MousePos.y);
+    // game info
+    if (ImGui::CollapsingHeader("Game State")){
+      ImGui::InputInt("Lifes", &lifes);
+      ImGui::InputInt("Bricks", &bricks);
+    }
     // space info
     if (ImGui::CollapsingHeader("Space Settings")){
       ImGui::DragFloat2("Space Gravity", &space_gravity.x);
@@ -426,11 +529,15 @@ void EngineScene::debug() {
       ball_infinity = lua.getBooleanFromTable("ball_settings", "infinity");
 
       // reset control vars
-      is_joint_ = true;
       resetGame();
     }
     ImGui::End();
     ImGui::Render();
+    //ImGui::ShowTestWindow();
+
+    // game state get values
+    lifes_amount_ = lifes;
+    bricks_amount_ = bricks;
 
     // space set values
     cpSpaceSetGravity(space_, { space_gravity.x, space_gravity.y });
@@ -458,54 +565,54 @@ void EngineScene::debug() {
   }
 }
 
-/** game flow **/
-//-------------------------------------------------------------------------//
-//                                  INPUT                                  //
-//-------------------------------------------------------------------------//
-void EngineScene::input() {
+/** checkers **/
+void EngineScene::checkStatus() {
 
-  switch (game_status_){
-    case kGameStatus_Start:
-    case kGameStatus_Playing: { inputBar(); } break;
-    case kGameStatus_Finished: {
-      if (ESAT::IsSpecialKeyDown(ESAT::kSpecialKey_Enter)){ resetGame(); }
-    } break;
+  if (lifes_amount_ < 1){
+
+    teleportObject(bar_, { -100.0f, -100.0f, 1.0f }, false);
+    teleportObject(ball_, { -100.0f, -100.0f, 1.0f }, false);
+    game_status_ = kGameStatus_Finished;
+  }
+
+  if (bricks_amount_ < 1){
+    if (current_level_ < total_levels_){
+
+      current_level_++;
+      set_levelNum(current_level_);
+      levelDump(current_level_);
+      resetLevel();
+
+      game_status_ = kGameStatus_Start;
+    }
+    else {
+
+      teleportObject(bar_, { -100.0f, -100.0f, 1.0f }, false);
+      teleportObject(ball_, { -100.0f, -100.0f, 1.0f }, false);
+      game_status_ = kGameStatus_Finished;
+    }
   }
 }
 
-//-------------------------------------------------------------------------//
-//                                 UPDATE                                  //
-//-------------------------------------------------------------------------//
-void EngineScene::update(const double delta_time) {
-
-  updateBar();
-  updateBall();
-  updateBricks();
+void EngineScene::showInfo() {
 
   if (game_status_ == kGameStatus_Finished){
 
-    // !!! game over text
+    char buffer[128];
+    char number[8];
+    Text game_over;
+    Text total_score;
+
+    sprintf(buffer, "TOTAL SCORE \0");
+    sprintf(number, "%d", score_amount_);
+    strcat(buffer, number);
+
+    game_over.init("GAME OVER\0", { 262.0f, 380.0f }, 50);
+    total_score.init(buffer, { 290.0f, 420.0f });
+
+    game_over.render();
+    total_score.render();
   }
-
-  /// update chipmunk space
-  cpSpaceStep(space_, delta_time / 1000.0f);
-}
-
-//-------------------------------------------------------------------------//
-//                                 RENDER                                  //
-//-------------------------------------------------------------------------//
-void EngineScene::render() {
-
-  ESAT::DrawBegin();
-  ESAT::DrawClear(0, 0, 0);
-
-  renderScenario();
-  renderLifes();
-  HUD();
-  debug();
-
-  ESAT::DrawEnd();
-  ESAT::WindowFrame();
 }
 
 /** setters **/
@@ -526,7 +633,7 @@ void EngineScene::set_scoreAmount(unsigned short int score) {
   char buffer[128];
   char number[8];
 
-  sprintf(buffer, "SCORE          \0");
+  sprintf(buffer, "SCORE \0");
   sprintf(number, "%d", score);
   strcat(buffer, number);
 
@@ -539,24 +646,33 @@ void EngineScene::resetLevel() {
   LuaWrapper lua;
   lua.init("config.lua");
 
-  bar_->set_position({ lua.getNumberFromTable("bar_settings", "x"),
-                       lua.getNumberFromTable("bar_settings", "y"),
-                       1.0f });
-  ball_->set_position({ lua.getNumberFromTable("ball_settings", "x"),
-                        lua.getNumberFromTable("ball_settings", "y"),
-                        1.0f });
+  teleportObject(bar_,
+                 { lua.getNumberFromTable("bar_settings", "x"),
+                   lua.getNumberFromTable("bar_settings", "y"),
+                   1.0f },
+                 true);
+
+  teleportObject(ball_,
+                 { lua.getNumberFromTable("ball_settings", "x"),
+                   lua.getNumberFromTable("ball_settings", "y"),
+                   1.0f },
+                 true);
+
   is_joint_ = true;
+  AUDIOMANAGER.playFX(0, 1.0f);
 }
 
 void EngineScene::resetGame() {
 
   current_level_ = 1;
-  life_num_ = 3;
+  lifes_amount_ = 3;
 
   set_levelNum(current_level_);
   set_scoreAmount(0);
-
+  resetLevel();
   levelDump(current_level_);
+
+  game_status_ = kGameStatus_Start;
 }
 
 /**
@@ -575,35 +691,22 @@ void EngineScene::teleportObject(GameObject2D* object,
   object->set_visible(visible);
 }
 
-/**
- * @brief play a sound sample with a specified volume
- * @param const unsigned short int sound_num, const float volume
- * @return void
- **/
-void EngineScene::playAudio(const unsigned short int sound_num,
-                            const float volume) {
-
-  int sample = AudioManager::instance().soloud_.play(
-                   AudioManager::instance().fx_[sound_num]);
-  AudioManager::instance().soloud_.setVolume(sample, volume);
-}
-
 /// destructor
 EngineScene::~EngineScene() {
 
   cpSpaceFree(space_);
   delete bar_;
   delete ball_;
-  delete bricks_;
   delete level_;
   delete score_;
-  delete grid_;
   bar_ = nullptr;
   ball_ = nullptr;
-  bricks_ = nullptr;
   level_ = nullptr;
   score_ = nullptr;
-  grid_ = nullptr;
+  for (unsigned short int i = 0; i < (kGridCols * kGridRows); i++){
+    delete bricks_[i];
+    bricks_[i] = nullptr;
+  }
   for (unsigned short int i = 0; i < 4; i++){
     delete wall_[i];
     wall_[i] = nullptr;

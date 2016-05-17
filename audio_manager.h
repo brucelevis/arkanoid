@@ -19,9 +19,24 @@ class AudioManager {
     /// singleton
     static AudioManager& instance();
 
+    /**
+     * @brief play a sound sample with a specified volume
+     * @param const unsigned short int index, const float volume
+     * @return void
+     **/
+    void playFX(const unsigned short int index, const float volume);
+
+    /**
+     * @brief play a music sample with a specified volume
+     * @param const unsigned short int index, const float volume
+     * @return void
+     **/
+    void playMusic(const unsigned short int index, const float volume);
+
     /// public vars
     SoLoud::Soloud soloud_;
-    SoLoud::Wav fx_[1];
+    SoLoud::Wav fx_[4];
+    SoLoud::Wav music_[0];
 
   private:
 

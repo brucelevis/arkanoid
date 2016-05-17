@@ -28,16 +28,19 @@ static enum BodyType {
   kBodyType_Sprite
 };
 
+static enum BodyKind {
+  kBodyKind_None = 0,
+  kBodyKind_Dynamic,
+  kBodyKind_Kinematic,
+  kBodyKind_Static
+};
+
 class GameObject2D {
 
   public:
 
     /// constructor
     GameObject2D();
-
-    /// copy constructor
-    GameObject2D(const GameObject2D& copy);
-    GameObject2D operator=(const GameObject2D& copy);
 
     /// destructor
     ~GameObject2D();
@@ -46,7 +49,7 @@ class GameObject2D {
     void init(cpSpace* space,
               const float mass = 1.0f,
               const float moment = 1.0f,
-              const bool is_dynamic = true);
+              const BodyKind body_kind = kBodyKind_Dynamic);
 
     /*
     // use this to create a world space
@@ -155,6 +158,10 @@ class GameObject2D {
 
   private:
 
+    /// copy constructor
+    GameObject2D(const GameObject2D& copy);
+    GameObject2D operator=(const GameObject2D& copy);
+
     /// private vars
     cpSpace* space_;
     cpBody* body_;
@@ -163,11 +170,11 @@ class GameObject2D {
     Polygon* poly_;
     Sprite* sprite_;
     BodyType body_type_;
+    BodyKind body_kind_;
     gtmath::Vec3 pointA_;
     gtmath::Vec3 pointB_;
     unsigned short int tag_;
     float moment_;
-    bool is_dynamic_;
     bool is_visible_;
     bool is_infinity_;
 };

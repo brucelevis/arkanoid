@@ -17,47 +17,36 @@ GameObject2D::GameObject2D() {
   poly_ = nullptr;
   sprite_ = nullptr;
   body_type_ = kBodyType_None;
+  body_kind_ = kBodyKind_None;
   pointA_ = gtmath::Vec3Zero();
   pointB_ = gtmath::Vec3Zero();
   tag_ = 0;
   moment_ = 0.0f;
-  is_dynamic_ = false;
   is_visible_ = false;
   is_infinity_ = false;
-}
-
-/// copy constructor
-GameObject2D::GameObject2D(const GameObject2D& copy) {
-
-  space_ = copy.space_;
-  body_ = copy.body_;
-  shape_ = copy.shape_;
-  box_ = copy.box_;
-  poly_ = copy.poly_;
-  sprite_ = copy.sprite_;
-  body_type_ = copy.body_type_;
-  pointA_ = copy.pointA_;
-  pointB_ = copy.pointB_;
-  tag_ = copy.tag_;
-  moment_ = copy.moment_;
-  is_dynamic_ = copy.is_dynamic_;
-  is_visible_ = copy.is_visible_;
-  is_infinity_ = copy.is_infinity_;
 }
 
 /// init values
 void GameObject2D::init(cpSpace* space,
                         const float mass,
                         const float moment,
-                        const bool is_dynamic) {
+                        const BodyKind body_kind) {
 
   space_ = space;
-  is_dynamic_ = is_dynamic;
+  body_kind_ = body_kind;
   moment_ = moment;
 
-  if (is_dynamic_) { body_ = cpSpaceAddBody(space_,
-                                            cpBodyNew(mass, moment)); }
-  else { body_ = cpSpaceAddBody(space_, cpBodyNewStatic()); }
+  switch (body_kind_){
+    case kBodyKind_Dynamic: {
+      body_ = cpSpaceAddBody(space_, cpBodyNew(mass, moment));
+    } break;
+    case kBodyKind_Kinematic: {
+      body_ = cpSpaceAddBody(space_, cpBodyNewKinematic());
+    } break;
+    case kBodyKind_Static: {
+      body_ = cpSpaceAddBody(space_, cpBodyNewStatic());
+    } break;
+  }
 
   is_visible_ = true;
 }
@@ -79,7 +68,7 @@ void GameObject2D::addBodySegment(const gtmath::Vec3 pointA,
                                                      { pointA_.x, pointA_.y },
                                                      { pointB_.x, pointB_.y },
                                                      radius));
-  if (is_dynamic_){ cpShapeSetMass(shape_, mass); }
+  if (body_kind_ == kBodyKind_Dynamic){ cpShapeSetMass(shape_, mass); }
   cpShapeSetFriction(shape_, friction);
 }
 
@@ -95,7 +84,7 @@ void GameObject2D::addBodyBox(const float width,
 
   shape_ = cpSpaceAddShape(space_,
                            cpBoxShapeNew(body_, width, height, radius));
-  if (is_dynamic_){ cpShapeSetMass(shape_, mass); }
+  if (body_kind_ == kBodyKind_Dynamic){ cpShapeSetMass(shape_, mass); }
   cpShapeSetFriction(shape_, friction);
   cpBodySetPosition(body_, { position.x, position.y });
 
@@ -128,7 +117,7 @@ void GameObject2D::addBodyPoly(const unsigned short int num_verts,
                                                      points,
                                                      radius));
 
-  if (is_dynamic_){ cpShapeSetMass(shape_, mass); }
+  if (body_kind_ == kBodyKind_Dynamic){ cpShapeSetMass(shape_, mass); }
   cpShapeSetFriction(shape_, friction);
   cpBodySetPosition(body_, { position.x, position.y });
 
@@ -164,7 +153,7 @@ void GameObject2D::addBodyPolyFree(const unsigned short int num_verts,
                                                      points,
                                                      radius));
 
-  if (is_dynamic_){ cpShapeSetMass(shape_, mass); }
+  if (body_kind_ == kBodyKind_Dynamic){ cpShapeSetMass(shape_, mass); }
   cpShapeSetFriction(shape_, friction);
   cpBodySetPosition(body_, { position.x, position.y });
 
@@ -191,7 +180,7 @@ void GameObject2D::addBodySprite(const char* path,
                                                  sprite_->width(),
                                                  sprite_->height(),
                                                  radius));
-  if (is_dynamic_){ cpShapeSetMass(shape_, mass); }
+  if (body_kind_ == kBodyKind_Dynamic){ cpShapeSetMass(shape_, mass); }
   cpShapeSetFriction(shape_, friction);
 }
 
@@ -391,8 +380,9 @@ const unsigned short int GameObject2D::tag() {
 /// delete body from space
 void GameObject2D::removeBody() {
 
+  cpShapeFree(shape_);
   cpBodyFree(body_);
-  cpSpaceRemoveBody(space_, body_);
+  //cpSpaceRemoveBody(space_, body_);
 }
 
 /// destructor

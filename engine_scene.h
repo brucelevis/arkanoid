@@ -25,12 +25,14 @@
 #include "sprite.h"
 #include "gameobject2d.h"
 
-#define SINGLETON GameManager::instance()
+#define GAMEMANAGER GameManager::instance()
+#define AUDIOMANAGER AudioManager::instance()
 #define BAR_TAG 1
 #define BALL_TAG 2
 #define BRICK_TAG 3
 #define WALL_TAG 4
 #define LIMIT_TAG 5
+#define POWERUP_TAG 6
 
 static enum GameStatus {
   kGameStatus_None = 0,
@@ -54,15 +56,11 @@ class EngineScene {
     /// init values
     void init();
 
-    /** input functions **/
-    void inputBar();
-
     /** update functions **/
     void updateScene();
     void updateBar();
     void updateBall();
     void updateBricks();
-    void checkStatus();
 
     /** render functions **/
     void renderScenario();
@@ -76,6 +74,10 @@ class EngineScene {
     void input();
     void update(const double delta_time);
     void render();
+
+    /** checkers **/
+    void checkStatus();
+    void showInfo();
 
     /** setters **/
     void set_levelNum(unsigned short int level);
@@ -108,6 +110,7 @@ class EngineScene {
     /// public consts
     static const unsigned short int kNumLevels = 3;
     static const unsigned short int kGridCols = 10;
+    static const unsigned short int kGridRows = 7;
     const float kBarSpeed = 500.0f;
 
   private:
@@ -122,16 +125,17 @@ class EngineScene {
     GameObject2D* bar_;
     GameObject2D* ball_;
     GameObject2D* wall_[4];
-    GameObject2D** bricks_;
+    GameObject2D* bricks_[kGridCols * kGridRows];
     Text* level_;
     Text* score_;
-    unsigned short int updating_; // 0 = not update, 1 = score++, 2 = life--
+    // 0 = not update, 1 = score, 2 = die, 3 = bounce, 4 = powerup
+    unsigned short int updating_;
     unsigned short int total_levels_;
     unsigned short int current_level_;
-    unsigned short int life_num_;
+    unsigned short int lifes_amount_;
     unsigned short int score_amount_;
-    unsigned short int brick_num_;
-    unsigned short int* grid_;
+    unsigned short int bricks_amount_;
+    unsigned short int grid_[kGridCols * kGridRows];
     float ball_speed_;
     bool is_joint_;
 };

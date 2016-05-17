@@ -33,25 +33,36 @@ AudioManager& AudioManager::instance() {
 AudioManager::AudioManager() {
 
   soloud_.init();
-  fx_[0].load("data/assets/sounds/sample.wav");
+	fx_[0].load("data/assets/sounds/start.wav");
+	fx_[1].load("data/assets/sounds/bounce.wav");
+	fx_[2].load("data/assets/sounds/powerup.wav");
+	fx_[3].load("data/assets/sounds/die.wav");
 
-  /*
-  // use this to play a sound
-  AudioManager::instance().soloud_.play(AudioManager::instance().fx_[0]);
-
-  // use this to play a sound with a specified volume
-  int turbo = AudioManager::instance().soloud_.play(AudioManager::instance().fx_[0]);
-  AudioManager::instance().soloud_.setVolume(turbo, 0.025f);
-  */
+	//music_[0].load("data/assets/sounds/die.wav");
 }
 
-/// copy constructor
-AudioManager::AudioManager(const AudioManager& copy) {
+/**
+ * @brief play a sound sample with a specified volume
+ * @param const unsigned short int index, const float volume
+ * @return void
+ **/
+void AudioManager::playFX(const unsigned short int index, const float volume) {
 
-  soloud_ = copy.soloud_;
-  for (unsigned short int i = 0; i < (sizeof(fx_[0]) / sizeof(fx_)); i++){
-    fx_[i] = copy.fx_[i];
-  }
+  int sample = soloud_.play(fx_[index]);
+  soloud_.setVolume(sample, volume);
+}
+
+/**
+ * @brief play a music sample with a specified volume
+ * @param const unsigned short int index, const float volume
+ * @return void
+ **/
+void AudioManager::playMusic(const unsigned short int index,
+														 const float volume) {
+
+  int loop = soloud_.play(music_[index]);
+  soloud_.setLooping(loop, 1);
+	soloud_.setVolume(loop, volume);
 }
 
 /// destructor
