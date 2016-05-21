@@ -22,6 +22,7 @@
 #include "luawrapper.h"
 #include "gtmath.h"
 #include "text.h"
+#include "box.h"
 #include "sprite.h"
 #include "gameobject2d.h"
 
@@ -111,7 +112,13 @@ class EngineScene {
     static const unsigned short int kNumLevels = 3;
     static const unsigned short int kGridCols = 10;
     static const unsigned short int kGridRows = 7;
-    const float kBarSpeed = 500.0f;
+
+    /// public struct
+    static struct GameState {
+
+    };
+
+    GameState game_state_;
 
   private:
 
@@ -124,10 +131,11 @@ class EngineScene {
     cpSpace* space_;
     GameObject2D* bar_;
     GameObject2D* ball_;
-    GameObject2D* wall_[4];
+    GameObject2D* walls_[4];
     GameObject2D* bricks_[kGridCols * kGridRows];
     Text* level_;
     Text* score_;
+    gtmath::Vec3 bar_velocity_;
     // 0 = not update, 1 = score, 2 = die, 3 = bounce, 4 = powerup
     unsigned short int updating_;
     unsigned short int total_levels_;
@@ -135,7 +143,9 @@ class EngineScene {
     unsigned short int lifes_amount_;
     unsigned short int score_amount_;
     unsigned short int bricks_amount_;
-    unsigned short int grid_[kGridCols * kGridRows];
+    float bar_max_speed_;
+    float bar_speed_;
+    float bar_friction_;
     float ball_speed_;
     bool is_joint_;
 };

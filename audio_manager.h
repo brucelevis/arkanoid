@@ -35,7 +35,7 @@ class AudioManager {
 
     /// public vars
     SoLoud::Soloud soloud_;
-    SoLoud::Wav fx_[4];
+    SoLoud::Wav fx_[7];
     SoLoud::Wav music_[0];
 
   private:

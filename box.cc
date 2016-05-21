@@ -35,34 +35,6 @@ Box::Box() {
   filled_ = false;
 }
 
-/// copy destructor
-Box::Box(const Box& copy) {
-
-  transform_ = copy.transform_;
-  position_ = copy.position_;
-  scale_ = copy.scale_;
-  vertex_[0] = copy.vertex_[0];
-  vertex_[1] = copy.vertex_[1];
-  vertex_[2] = copy.vertex_[2];
-  vertex_[3] = copy.vertex_[3];
-  points_[0] = copy.points_[0];
-  points_[1] = copy.points_[1];
-  points_[2] = copy.points_[2];
-  points_[3] = copy.points_[3];
-  points_[4] = copy.points_[4];
-  points_[5] = copy.points_[5];
-  points_[6] = copy.points_[6];
-  points_[7] = copy.points_[7];
-  width_ = copy.width_;
-  height_ = copy.height_;
-  rotation_ = copy.rotation_;
-  color_[0] = copy.color_[0];
-  color_[1] = copy.color_[1];
-  color_[2] = copy.color_[2];
-  alpha_ = copy.alpha_;
-  filled_ = copy.filled_;
-}
-
 /// init values
 void Box::init(const float width,
                const float height,
@@ -152,6 +124,7 @@ void Box::set_position(const gtmath::Vec3 position) {
   position_ = position;
   calculateTransform();
 }
+
 void Box::set_scale(const gtmath::Vec3 scale) {
 
   scale_ = scale;

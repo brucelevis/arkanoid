@@ -20,7 +20,9 @@ bar_settings = {
   mass = 0.5,
   friction = 0.0,
   elasticity = 1.0,
-  infinity = true
+  infinity = true,
+  max_speed = 500.0,
+  air_friction = 0.98
 };
 
 -- ball

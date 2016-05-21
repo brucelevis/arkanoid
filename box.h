@@ -23,9 +23,6 @@ class Box {
     /// constructor
     Box();
 
-    /// copy constructor
-    Box(const Box& copy);
-
     /// destructor
     ~Box();
 
@@ -35,9 +32,9 @@ class Box {
               const gtmath::Vec3 position = { 0.0f, 0.0f, 1.0f },
               const gtmath::Vec3 scale = { 1.0f, 1.0f, 1.0f },
               const float rotation = 0.0f,
-              const gtmath::Vec3 color = { 255.0f, 255.0f, 255.0f },
+              const gtmath::Vec3 color = { 0.0f, 0.0f, 0.0f },
               const unsigned char alpha = 255,
-              bool filled = false);
+              bool filled = true);
 
     /// calculate transform
     void calculateTransform();
@@ -68,6 +65,10 @@ class Box {
     static const unsigned short int kNumSides = 4;
 
   private:
+
+    /// copy constructor
+    Box(const Box& copy);
+    Box operator=(const Box& copy);
 
     /// private vars
     gtmath::Mat3 transform_;

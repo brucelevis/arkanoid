@@ -5,8 +5,9 @@
  * @author Toni Marquez
  * @fixes ! ball bounce with bar
  *        ! invisible bricks
- *        ! no more collision handlers than the last
  *        > bricks appear at 0,0
+ *        > struct instead of bool for handler (+ check bricks remaining)
+ *        / joints
  *
  **/
 

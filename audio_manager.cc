@@ -37,6 +37,9 @@ AudioManager::AudioManager() {
 	fx_[1].load("data/assets/sounds/bounce.wav");
 	fx_[2].load("data/assets/sounds/powerup.wav");
 	fx_[3].load("data/assets/sounds/die.wav");
+	fx_[4].load("data/assets/sounds/break1.wav");
+	fx_[5].load("data/assets/sounds/break2.wav");
+	fx_[6].load("data/assets/sounds/break3.wav");
 
 	//music_[0].load("data/assets/sounds/die.wav");
 }

@@ -41,36 +41,24 @@ void Collision(cpArbiter *arbiter, cpSpace *space, void *data) {
   }
 
   // limit collision
-  if (cpShapeGetCollisionType(a) == LIMIT_TAG){
-    body = cpShapeGetBody(a);
-    cpBodySetPosition(body, { -100.0f, -100.0f });
-    cpShapeFree(b);
-    cpBodyFree(body);
-    *updating = 2;
-  }
-  else if (cpShapeGetCollisionType(b) == LIMIT_TAG){
-    body = cpShapeGetBody(b);
-    cpBodySetPosition(body, { -100.0f, -100.0f });
-    cpShapeFree(b);
-    cpBodyFree(body);
-    *updating = 2;
-  }
+  if (cpShapeGetCollisionType(a) == LIMIT_TAG){ *updating = 2; }
+  else if (cpShapeGetCollisionType(b) == LIMIT_TAG){ *updating = 2; }
 
   // wall collision
-  if (cpShapeGetCollisionType(a) == WALL_TAG){
+  if (cpShapeGetCollisionType(a) == WALL_TAG ||
+      cpShapeGetCollisionType(a) == BAR_TAG){
+
     *updating = 3;
   }
-  else if (cpShapeGetCollisionType(b) == WALL_TAG){
+  else if (cpShapeGetCollisionType(b) == WALL_TAG ||
+           cpShapeGetCollisionType(b) == BAR_TAG){
+
     *updating = 3;
   }
 
   // powerup collision
-  if (cpShapeGetCollisionType(a) == POWERUP_TAG){
-    *updating = 4;
-  }
-  else if (cpShapeGetCollisionType(b) == POWERUP_TAG){
-    *updating = 4;
-  }
+  if (cpShapeGetCollisionType(a) == POWERUP_TAG){ *updating = 4; }
+  else if (cpShapeGetCollisionType(b) == POWERUP_TAG){ *updating = 4; }
 }
 
 /// constructor
@@ -81,22 +69,23 @@ EngineScene::EngineScene() {
   bar_ = new GameObject2D();
   ball_ = new GameObject2D();
   for (unsigned short int i = 0; i < 4; i++){
-    wall_[i] = new GameObject2D();
+    walls_[i] = new GameObject2D();
   }
   for (unsigned short int i = 0; i < (kGridCols * kGridRows); i++){
     bricks_[i] = nullptr;
   }
   level_ = new Text();
   score_ = new Text();
+  bar_velocity_ = { 0.0f, 0.0f, 0.0f };
   updating_ = 0;
   total_levels_ = 0;
   current_level_ = 0;
   lifes_amount_ = 0;
   score_amount_ = 0;
   bricks_amount_ = 0;
-  for (unsigned short int i = 0; i < (kGridCols * kGridRows); i++){
-    grid_[i] = 0;
-  }
+  bar_max_speed_ = 0.0f;
+  bar_speed_ = 0.0f;
+  bar_friction_ = 0.0f;
   ball_speed_ = 0.0f;
   is_joint_ = false;
 }
@@ -108,40 +97,40 @@ void EngineScene::initMap() {
   lua.init("config.lua");
 
   // walls (up, down, left, right)
-  wall_[0]->init(space_, 1.0f, 1.0f, kBodyKind_Static);
-  wall_[0]->addBodySprite("data/assets/sprites/wall_h.png",
+  walls_[0]->init(space_, 1.0f, 1.0f, kBodyKind_Static);
+  walls_[0]->addBodySprite("data/assets/sprites/wall_h.png",
                           { 400.0f, 90.0f, 1.0f },
                           lua.getNumberFromTable("wall_settings", "mass"),
                           lua.getNumberFromTable("wall_settings", "friction"));
-  wall_[0]->set_elasticity(lua.getNumberFromTable("wall_settings", "elasticity"));
-  wall_[0]->set_tag(WALL_TAG);
+  walls_[0]->set_elasticity(lua.getNumberFromTable("wall_settings", "elasticity"));
+  walls_[0]->set_tag(WALL_TAG);
 
-  wall_[1]->init(space_, 1.0f, 1.0f, kBodyKind_Static);
-  wall_[1]->addBodySprite("data/assets/sprites/wall_h.png",
+  walls_[1]->init(space_, 1.0f, 1.0f, kBodyKind_Static);
+  walls_[1]->addBodySprite("data/assets/sprites/wall_h.png",
                           { 400.0f, 770.0f, 1.0f },
                           lua.getNumberFromTable("wall_settings", "mass"),
                           lua.getNumberFromTable("wall_settings", "friction"));
-  wall_[1]->set_elasticity(lua.getNumberFromTable("wall_settings", "elasticity"));
-  wall_[1]->set_tag(LIMIT_TAG);
+  walls_[1]->set_elasticity(lua.getNumberFromTable("wall_settings", "elasticity"));
+  walls_[1]->set_tag(LIMIT_TAG);
 
-  wall_[2]->init(space_, 1.0f, 1.0f, kBodyKind_Static);
-  wall_[2]->addBodySprite("data/assets/sprites/wall_v.png",
+  walls_[2]->init(space_, 1.0f, 1.0f, kBodyKind_Static);
+  walls_[2]->addBodySprite("data/assets/sprites/wall_v.png",
                           { 30.0f, 430.0f, 1.0f },
                           lua.getNumberFromTable("wall_settings", "mass"),
                           lua.getNumberFromTable("wall_settings", "friction"));
-  wall_[2]->set_elasticity(lua.getNumberFromTable("wall_settings", "elasticity"));
-  wall_[2]->set_tag(WALL_TAG);
+  walls_[2]->set_elasticity(lua.getNumberFromTable("wall_settings", "elasticity"));
+  walls_[2]->set_tag(WALL_TAG);
 
-  wall_[3]->init(space_, 1.0f, 1.0f, kBodyKind_Static);
-  wall_[3]->addBodySprite("data/assets/sprites/wall_v.png",
+  walls_[3]->init(space_, 1.0f, 1.0f, kBodyKind_Static);
+  walls_[3]->addBodySprite("data/assets/sprites/wall_v.png",
                           { 770.0f, 430.0f, 1.0f },
                           lua.getNumberFromTable("wall_settings", "mass"),
                           lua.getNumberFromTable("wall_settings", "friction"));
-  wall_[3]->set_elasticity(lua.getNumberFromTable("wall_settings", "elasticity"));
-  wall_[3]->set_tag(WALL_TAG);
+  walls_[3]->set_elasticity(lua.getNumberFromTable("wall_settings", "elasticity"));
+  walls_[3]->set_tag(WALL_TAG);
 
   // bar
-  bar_->init(space_);
+  bar_->init(space_, 1.0f, 1.0f, kBodyKind_Kinematic);
   bar_->addBodySprite("data/assets/sprites/bar.png",
                       { lua.getNumberFromTable("bar_settings", "x"),
                         lua.getNumberFromTable("bar_settings", "y"),
@@ -151,6 +140,9 @@ void EngineScene::initMap() {
   bar_->set_elasticity(lua.getNumberFromTable("bar_settings", "elasticity"));
   bar_->set_infinity(lua.getBooleanFromTable("bar_settings", "infinity"));
   bar_->set_tag(BAR_TAG);
+
+  bar_max_speed_ = lua.getNumberFromTable("bar_settings", "max_speed");
+  bar_friction_ = lua.getNumberFromTable("bar_settings", "air_friction");
 
   // ball
   ball_->init(space_);
@@ -177,7 +169,7 @@ void EngineScene::initMap() {
 void EngineScene::initTexts() {
 
   level_->init("LEVEL 1\0", { 450.0f, 60.0f });
-  score_->init("SCORE 0\0", { 650.0f, 60.0f });
+  score_->init("SCORE 0\0", { 620.0f, 60.0f });
 }
 
 void EngineScene::levelDump(unsigned short int level) {
@@ -191,6 +183,7 @@ void EngineScene::levelDump(unsigned short int level) {
   LuaWrapper lua;
   lua.init("config.lua");
 
+  unsigned short int grid_[kGridCols * kGridRows];
   for (unsigned short int i = 0; i < (kGridCols * kGridRows); i++){
     grid_[i] = lua.getIntegerFromTableByIndex(buffer, i);
     bricks_[i] = nullptr;
@@ -237,11 +230,19 @@ void EngineScene::init() {
   /// register collider listener
   cpCollisionHandler* handler = cpSpaceAddCollisionHandler(space_,
                                                            BALL_TAG,
-                                                           BRICK_TAG);
-  /*
+                                                           WALL_TAG);
+  handler->separateFunc = Collision;
+  handler->userData = &updating_;
+
+  handler = cpSpaceAddCollisionHandler(space_, BALL_TAG, BRICK_TAG);
+  handler->separateFunc = Collision;
+  handler->userData = &updating_;
+
   handler = cpSpaceAddCollisionHandler(space_, BALL_TAG, LIMIT_TAG);
+  handler->separateFunc = Collision;
+  handler->userData = &updating_;
+
   handler = cpSpaceAddCollisionHandler(space_, BALL_TAG, BAR_TAG);
-  */
   handler->separateFunc = Collision;
   handler->userData = &updating_;
 
@@ -258,38 +259,53 @@ void EngineScene::init() {
 //-------------------------------------------------------------------------//
 void EngineScene::input() {
 
+  const float kSpeedIncrease = 25.0f;
+
   switch (game_status_){
     case kGameStatus_Start: {
 
       if (ESAT::IsSpecialKeyDown(ESAT::kSpecialKey_Space)){
-        gtmath::Vec3 velocity = (gtmath::Vec3Right() -
-                                 gtmath::Vec3Up()) *
-                                 ball_speed_;
-        ball_->set_velocity(velocity);
+        gtmath::Vec3 ball_velocity = (gtmath::Vec3Right() - gtmath::Vec3Up()) *
+                                     ball_speed_;
+        ball_->set_velocity(ball_velocity);
 
         is_joint_ = false;
         game_status_ = kGameStatus_Playing;
       }
       else if (ESAT::IsSpecialKeyPressed(ESAT::kSpecialKey_Left)){
-        gtmath::Vec3 velocity = gtmath::Vec3Right() * -kBarSpeed;
-        bar_->addForce(velocity);
+        if (bar_speed_ < bar_max_speed_){ bar_speed_ += kSpeedIncrease; }
+        bar_velocity_ = gtmath::Vec3Right() * -bar_speed_;
       }
       else if (ESAT::IsSpecialKeyPressed(ESAT::kSpecialKey_Right)){
-        gtmath::Vec3 velocity = gtmath::Vec3Right() * kBarSpeed;
-        bar_->addForce(velocity);
+        if (bar_speed_ < bar_max_speed_){ bar_speed_ += kSpeedIncrease; }
+        bar_velocity_ = gtmath::Vec3Right() * bar_speed_;
       }
+      else {
+        bar_velocity_ = bar_velocity_ * bar_friction_;
+        if (bar_speed_ > 0.0f){ bar_speed_ -= kSpeedIncrease; }
+      }
+
+      bar_->set_velocity(bar_velocity_);
+
     } break;
 
     case kGameStatus_Playing: {
 
       if (ESAT::IsSpecialKeyPressed(ESAT::kSpecialKey_Left)){
-        gtmath::Vec3 velocity = gtmath::Vec3Right() * -kBarSpeed;
-        bar_->addForce(velocity);
+        if (bar_speed_ < bar_max_speed_){ bar_speed_ += kSpeedIncrease; }
+        bar_velocity_ = gtmath::Vec3Right() * -bar_speed_;
       }
       else if (ESAT::IsSpecialKeyPressed(ESAT::kSpecialKey_Right)){
-        gtmath::Vec3 velocity = gtmath::Vec3Right() * kBarSpeed;
-        bar_->addForce(velocity);
+        if (bar_speed_ < bar_max_speed_){ bar_speed_ += kSpeedIncrease; }
+        bar_velocity_ = gtmath::Vec3Right() * bar_speed_;
       }
+      else {
+        bar_velocity_ = bar_velocity_ * bar_friction_;
+        if (bar_speed_ > 0.0f){ bar_speed_ -= kSpeedIncrease; }
+      }
+
+      bar_->set_velocity(bar_velocity_);
+
     } break;
 
     case kGameStatus_Finished: {
@@ -308,7 +324,8 @@ void EngineScene::updateScene() {
   switch (updating_) {
     // score
     case 1: {
-      AUDIOMANAGER.playFX(1, 1.0f);
+      unsigned short int sample = (rand() % 3) + 4;
+      AUDIOMANAGER.playFX(sample, 1.0f);
       bricks_amount_--;
       score_amount_ += 100;
       set_scoreAmount(score_amount_);
@@ -319,6 +336,7 @@ void EngineScene::updateScene() {
       AUDIOMANAGER.playFX(3, 1.0f);
       lifes_amount_--;
       resetLevel();
+      game_status_ = kGameStatus_Start;
       updating_ = 0;
     } break;
     // bounce
@@ -339,9 +357,17 @@ void EngineScene::updateBar() {
   LuaWrapper lua;
   lua.init("config.lua");
 
-  bar_->set_position({ bar_->position().x,
-                       lua.getNumberFromTable("bar_settings", "y"),
-                       1.0f });
+  if (bar_->position().x < 75.0f){
+
+    bar_velocity_.x *= -1;
+    bar_->set_position({ 80.0f, bar_->position().y, 1.0f });
+  }
+  else if (bar_->position().x > 725.0f){
+
+    bar_velocity_.x *= -1;
+    bar_->set_position({ 720.0f, bar_->position().y, 1.0f });
+  }
+
   bar_->update();
 }
 
@@ -383,7 +409,7 @@ void EngineScene::update(const double delta_time) {
 void EngineScene::renderScenario() {
 
   for(unsigned short int i = 0; i < 4; i++){
-    wall_[i]->update();
+    walls_[i]->update();
   }
 }
 
@@ -442,7 +468,6 @@ void EngineScene::debug() {
     gtmath::Vec3 bar_position = bar_->position();
     gtmath::Vec3 bar_velocity = bar_->velocity();
     float bar_angle = bar_->angle();
-    float bar_mass = bar_->mass();
     float bar_friction = bar_->friction();
     float bar_elasticity = bar_->elasticity();
     float bar_moment = bar_->moment();
@@ -478,7 +503,6 @@ void EngineScene::debug() {
       ImGui::DragFloat2("Bar Position", &bar_position.x);
       ImGui::DragFloat2("Bar Velocity", &bar_velocity.x);
       ImGui::SliderFloat("Bar Angle", &bar_angle, -(kPid / 2), (kPid / 2));
-      ImGui::SliderFloat("Bar Mass", &bar_mass, 0.1f, 20.0f);
       ImGui::SliderFloat("Bar Friction", &bar_friction, 0.0f, 1.0f);
       ImGui::SliderFloat("Bar Elasticity", &bar_elasticity, 0.0f, 1.0f);
       ImGui::Checkbox("Bar Infinity", &bar_infinity);
@@ -510,7 +534,6 @@ void EngineScene::debug() {
                        1.0 };
       bar_velocity = gtmath::Vec3Zero();
       bar_angle = 0.0f;
-      bar_mass = lua.getNumberFromTable("bar_settings", "mass");
       bar_friction = lua.getNumberFromTable("bar_settings", "friction");
       bar_elasticity = lua.getNumberFromTable("bar_settings", "elasticity");
       bar_moment = lua.getNumberFromTable("bar_settings", "moment");
@@ -547,7 +570,6 @@ void EngineScene::debug() {
     bar_->set_position(bar_position);
     bar_->set_velocity(bar_velocity);
     bar_->set_angle(bar_angle);
-    bar_->set_mass(bar_mass);
     bar_->set_friction(bar_friction);
     bar_->set_elasticity(bar_elasticity);
     bar_->set_moment(bar_moment);
@@ -602,13 +624,19 @@ void EngineScene::showInfo() {
     char number[8];
     Text game_over;
     Text total_score;
+    Box panel;
+
+    panel.init(360.0f, 160.f, { GAMEMANAGER.stageWidth() / 2,
+                                (GAMEMANAGER.stageHeight() / 2) - 25.0f,
+                                1.0f });
+    panel.render();
 
     sprintf(buffer, "TOTAL SCORE \0");
     sprintf(number, "%d", score_amount_);
     strcat(buffer, number);
 
-    game_over.init("GAME OVER\0", { 262.0f, 380.0f }, 50);
-    total_score.init(buffer, { 290.0f, 420.0f });
+    game_over.init("GAME OVER\0", { 268.0f, 380.0f }, 50);
+    total_score.init(buffer, { 296.0f, 420.0f });
 
     game_over.render();
     total_score.render();
@@ -708,7 +736,7 @@ EngineScene::~EngineScene() {
     bricks_[i] = nullptr;
   }
   for (unsigned short int i = 0; i < 4; i++){
-    delete wall_[i];
-    wall_[i] = nullptr;
+    delete walls_[i];
+    walls_[i] = nullptr;
   }
 }

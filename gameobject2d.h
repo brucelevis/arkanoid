@@ -115,6 +115,14 @@ class GameObject2D {
                        const float mass = 10.0f,
                        const float friction = 0.5f,
                        const float radius = 1.0f);
+    /// sprite body multiple shapes
+    /*
+    void addBodySpriteJoint(const char* path,
+                            const gtmath::Vec3 position = { 0.0f, 0.0f, 1.0f },
+                            const float mass = 10.0f,
+                            const float friction = 0.5f,
+                            const float radius = 1.0f);
+                            */
 
     /**
      * @brief update object position and render it
