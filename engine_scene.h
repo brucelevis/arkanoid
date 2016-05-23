@@ -61,6 +61,8 @@ struct GameState {
   unsigned short int bricks_amount_;
   // 0 = not update, 1 = score, 2 = die, 3 = bounce, 4 = powerup
   unsigned short int updating_;
+  bool godmode_;
+  bool freemode_;
 };
 
 class EngineScene {
@@ -112,7 +114,7 @@ class EngineScene {
 
     /** reseters **/
     void resetLevel();
-    void resetGame();
+    void resetGame(unsigned short int level);
 
     /**
      * @brief teleport an object to a specified position able to put there
@@ -145,6 +147,7 @@ class EngineScene {
 
     /// private vars
     GameStatus game_status_;
+    LuaWrapper* lua_;
     Text* level_;
     Text* score_;
     gtmath::Vec3 bar_velocity_;

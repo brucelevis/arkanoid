@@ -290,6 +290,11 @@ void GameObject2D::set_visible(const bool visible) {
   is_visible_ = visible;
 }
 
+void GameObject2D::set_sprite(const char* path) {
+
+  sprite_->set_sprite(path);
+}
+
 void GameObject2D::set_tag(const unsigned short int tag) {
 
   tag_ = tag;

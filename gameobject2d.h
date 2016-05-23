@@ -144,6 +144,7 @@ class GameObject2D {
     void set_moment(const bool inertia);
     void set_infinity(const bool infinity);
     void set_visible(const bool visible);
+    void set_sprite(const char* path);
     void set_tag(const unsigned short int tag);
 
     /** getters **/

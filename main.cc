@@ -4,11 +4,9 @@
  * @brief Main
  * @author Toni Marquez
  * @fixes > improve bar movement
- *        > lua global or local
- *        ! fix debug num bricks
  *        / joints
  *        / powerups
- *        / change double brick color
+ *        ? memory leak (slow frame rate) + free bricks memory
  *
  **/
 
