@@ -3,11 +3,12 @@
  * @project Arkanoid
  * @brief Main
  * @author Toni Marquez
- * @fixes ! ball bounce with bar
- *        ! invisible bricks
- *        > bricks appear at 0,0
- *        > struct instead of bool for handler (+ check bricks remaining)
+ * @fixes > improve bar movement
+ *        > lua global or local
+ *        ! fix debug num bricks
  *        / joints
+ *        / powerups
+ *        / change double brick color
  *
  **/
 
@@ -33,14 +34,14 @@ void LuaConfig(){
   if (!GAMEMANAGER.debug_mode_){
 
     GAMEMANAGER.init(lua.getGlobalNumber("kNormalWindowWidth"),
-                   lua.getGlobalNumber("kNormalWindowHeight"),
-                   lua.getGlobalNumber("kSleepTime"));
+                     lua.getGlobalNumber("kNormalWindowHeight"),
+                     lua.getGlobalNumber("kSleepTime"));
   }
   else {
 
     GAMEMANAGER.init(lua.getGlobalNumber("kDebugWindowWidth"),
-                   lua.getGlobalNumber("kDebugWindowHeight"),
-                   lua.getGlobalNumber("kSleepTime"));
+                     lua.getGlobalNumber("kDebugWindowHeight"),
+                     lua.getGlobalNumber("kSleepTime"));
   }
 }
 

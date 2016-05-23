@@ -374,7 +374,7 @@ const gtmath::Vec3 GameObject2D::vert(unsigned short int index) {
 
 const unsigned short int GameObject2D::tag() {
 
-  return cpShapeGetCollisionType(shape_);;
+  return cpShapeGetCollisionType(shape_);
 }
 
 /// delete body from space

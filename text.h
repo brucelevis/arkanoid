@@ -23,18 +23,15 @@ class Text {
     /// constructor
     Text();
 
-    /// copy constructor
-    Text(const Text& copy);
-
     /// destructor
     ~Text();
 
     /// init values
-    void init(char* text = "none\0",
-              gtmath::Point position = { 0.0f, 0.0f },
-              unsigned short int size = 25,
-              gtmath::Vec3 color = { 255.0f, 255.0f, 255.0f },
-              char* font = "data/assets/fonts/04B.ttf\0");
+    void init(const char* text = "none\0",
+              const gtmath::Point position = { 0.0f, 0.0f },
+              const unsigned short int size = 25,
+              const gtmath::Vec3 color = { 255.0f, 255.0f, 255.0f },
+              const char* font = "data/assets/fonts/04B.ttf\0");
 
     /// draw on screen
     void render();
@@ -50,6 +47,10 @@ class Text {
     const gtmath::Point position();
 
   private:
+
+    /// copy constructor
+    Text(const Text& copy);
+    Text operator=(const Text& copy);
 
     /// private vars
     gtmath::Point position_;

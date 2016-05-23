@@ -20,25 +20,12 @@ Text::Text() {
   size_ = 0;
 }
 
-/// copy constructor
-Text::Text(const Text& copy) {
-
-  position_ = copy.position_;
-  sprintf(text_, "%s", copy.text_);
-  sprintf(font_, "%s", copy.font_);
-  color_[0] = copy.color_[0];
-  color_[1] = copy.color_[1];
-  color_[2] = copy.color_[2];
-  alpha_ = copy.alpha_;
-  size_ = copy.size_;
-}
-
 /// init values
-void Text::init(char* text,
-                gtmath::Point position,
-                unsigned short int size,
-                gtmath::Vec3 color,
-                char* font) {
+void Text::init(const char* text,
+                const gtmath::Point position,
+                const unsigned short int size,
+                const gtmath::Vec3 color,
+                const char* font) {
 
   sprintf(text_, "%s", text);
   position_ = position;

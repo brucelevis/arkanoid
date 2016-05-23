@@ -9,6 +9,8 @@
 #ifndef __ENGINESCENE_H__
 #define __ENGINESCENE_H__ 1
 
+#include <string>
+
 #include <ESAT/window.h>
 #include <ESAT/input.h>
 #include <ESAT/draw.h>
@@ -22,7 +24,6 @@
 #include "luawrapper.h"
 #include "gtmath.h"
 #include "text.h"
-#include "box.h"
 #include "sprite.h"
 #include "gameobject2d.h"
 
@@ -30,16 +31,36 @@
 #define AUDIOMANAGER AudioManager::instance()
 #define BAR_TAG 1
 #define BALL_TAG 2
-#define BRICK_TAG 3
-#define WALL_TAG 4
-#define LIMIT_TAG 5
-#define POWERUP_TAG 6
+#define WALL_TAG 3
+#define LIMIT_TAG 4
+#define POWERUP_TAG 5
+
+static const unsigned short int kNumLevels = 3;
+static const unsigned short int kGridCols = 10;
+static const unsigned short int kGridRows = 7;
 
 static enum GameStatus {
   kGameStatus_None = 0,
   kGameStatus_Start,
   kGameStatus_Playing,
   kGameStatus_Finished
+};
+
+struct Brick {
+  GameObject2D* handle_;
+  unsigned short int type_; // 1 = normal, 2 = double
+  bool is_active_;
+};
+
+struct GameState {
+  cpSpace* space_;
+  GameObject2D* bar_;
+  GameObject2D* ball_;
+  GameObject2D* walls_[4];
+  Brick* bricks_;
+  unsigned short int bricks_amount_;
+  // 0 = not update, 1 = score, 2 = die, 3 = bounce, 4 = powerup
+  unsigned short int updating_;
 };
 
 class EngineScene {
@@ -52,6 +73,10 @@ class EngineScene {
     /** settings **/
     void initMap();
     void initTexts();
+    void initBrick(unsigned short int index,
+                   unsigned short int x,
+                   unsigned short int y,
+                   unsigned short int kind);
     void levelDump(unsigned short int level);
 
     /// init values
@@ -78,6 +103,7 @@ class EngineScene {
 
     /** checkers **/
     void checkStatus();
+    const bool isLevelFinished();
     void showInfo();
 
     /** setters **/
@@ -108,16 +134,7 @@ class EngineScene {
     /// destructor
     ~EngineScene();
 
-    /// public consts
-    static const unsigned short int kNumLevels = 3;
-    static const unsigned short int kGridCols = 10;
-    static const unsigned short int kGridRows = 7;
-
-    /// public struct
-    static struct GameState {
-
-    };
-
+    /// public vars
     GameState game_state_;
 
   private:
@@ -128,26 +145,19 @@ class EngineScene {
 
     /// private vars
     GameStatus game_status_;
-    cpSpace* space_;
-    GameObject2D* bar_;
-    GameObject2D* ball_;
-    GameObject2D* walls_[4];
-    GameObject2D* bricks_[kGridCols * kGridRows];
     Text* level_;
     Text* score_;
     gtmath::Vec3 bar_velocity_;
-    // 0 = not update, 1 = score, 2 = die, 3 = bounce, 4 = powerup
-    unsigned short int updating_;
     unsigned short int total_levels_;
     unsigned short int current_level_;
     unsigned short int lifes_amount_;
     unsigned short int score_amount_;
-    unsigned short int bricks_amount_;
     float bar_max_speed_;
     float bar_speed_;
     float bar_friction_;
     float ball_speed_;
     bool is_joint_;
+    char padding_[3]; /// word padding
 };
 
 #endif

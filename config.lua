@@ -53,13 +53,16 @@ brick_settings = {
 --[[
 - @title level tables
 - @brief - the level must have a maximum of 10 columns * 7 rows
-         - type of bricks: 1, 2, 3, 4, 5, 6 & 7
+         - first value is the number of the level
+         - second value is the amount of bricks excluding gaps (0)
+         - kind of bricks: 1, 2, 3, 4, 5, 6 & 7
          - to place a gap must put a 0
 --]]
 
 kTotalLevels = 4; -- change if a level is added or removed
 
 level1 = {
+  1, 70,
   7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
   6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
   5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
@@ -70,6 +73,7 @@ level1 = {
 };
 
 level2 = {
+  2, 30,
   7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
   6, 0, 0, 0, 0, 0, 0, 0, 0, 6,
   5, 0, 0, 0, 0, 0, 0, 0, 0, 5,
@@ -80,6 +84,7 @@ level2 = {
 };
 
 level3 = {
+  3, 38,
   7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
   0, 6, 6, 6, 6, 6, 6, 6, 6, 0,
   0, 0, 5, 5, 5, 5, 5, 5, 0, 0,
@@ -90,6 +95,7 @@ level3 = {
 };
 
 level4 = {
+  4, 49,
   1, 1, 1, 1, 0, 0, 0, 0, 0, 0,
   2, 2, 2, 2, 2, 0, 0, 0, 0, 0,
   3, 3, 3, 3, 3, 3, 0, 0, 0, 0,
