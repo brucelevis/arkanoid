@@ -34,14 +34,13 @@ class GameManager {
 
   private:
 
-    /// constructor
+    /// constructor & destructor
     GameManager();
+    ~GameManager();
 
     /// copy constructor
     GameManager(const GameManager& copy);
-
-    /// destructor
-    ~GameManager();
+    GameManager operator=(const GameManager& copy);
 
     /// private vars
     unsigned short int stage_width_;

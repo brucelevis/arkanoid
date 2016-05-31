@@ -71,18 +71,21 @@ struct GameState {
   unsigned short int updating_;
   bool godmode_;
   bool freemode_;
+  bool drawcolliders_;
 };
 
 class EngineScene {
 
   public:
 
-    /// constructor
+    /// constructor & destructor
     EngineScene();
+    ~EngineScene();
 
     /** settings **/
     void initMap();
     void initTexts();
+    void initSprites();
     void initBrick(unsigned short int index,
                    unsigned short int x,
                    unsigned short int y,
@@ -121,6 +124,7 @@ class EngineScene {
     void set_scoreAmount(unsigned short int score);
 
     /** reseters **/
+    void resetBricks();
     void resetLevel();
     void nextLevel();
     void resetGame(unsigned short int level);
@@ -142,9 +146,6 @@ class EngineScene {
      **/
     void playAudio(const unsigned short int sound_num, const float volume);
 
-    /// destructor
-    ~EngineScene();
-
     /// public vars
     GameState game_state_;
 
@@ -160,6 +161,7 @@ class EngineScene {
     LuaWrapper* lua_;
     Text* level_;
     Text* score_;
+    Sprite* life_;
     gtmath::Vec3 bar_velocity_;
     unsigned short int total_levels_;
     unsigned short int current_level_;

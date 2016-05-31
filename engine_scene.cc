@@ -20,10 +20,10 @@ cpBool Collision(cpArbiter *arbiter, cpSpace *space, void *data) {
   cpArbiterGetShapes(arbiter, &a, &b);
 
   /*
+  */
   printf("COLLISION %d %d\n",
          cpShapeGetCollisionType(a),
          cpShapeGetCollisionType(b));
-  */
 
   // brick collision
   for (unsigned short int i = 0; i < game_state->bricks_amount_; i++){
@@ -101,11 +101,13 @@ EngineScene::EngineScene() {
   game_state_.updating_ = 0;
   game_state_.godmode_ = false;
   game_state_.freemode_ = false;
+  game_state_.drawcolliders_ = false;
   game_status_ = kGameStatus_None;
   gamepad_ = nullptr;
   lua_ = nullptr;
   level_ = new Text();
   score_ = new Text();
+  life_ = new Sprite();
   bar_velocity_ = { 0.0f, 0.0f, 0.0f };
   total_levels_ = 0;
   current_level_ = 0;
@@ -212,7 +214,7 @@ void EngineScene::initMap() {
 
   // ball
   game_state_.ball_->init(game_state_.space_);
-  #if 1
+  #if 1 // instantiate as a box
   game_state_.ball_->addBodyBox(
       "data/assets/sprites/ball.png",
       { lua_->getNumberFromTable("ball_settings", "x"),
@@ -220,7 +222,7 @@ void EngineScene::initMap() {
         1.0f },
       lua_->getNumberFromTable("ball_settings", "mass"),
       lua_->getNumberFromTable("ball_settings", "friction"));
-  #else
+  #else // instantiate as a circle
   game_state_.ball_->addBodyCircle(
     "data/assets/sprites/ball.png",
     100,
@@ -251,6 +253,12 @@ void EngineScene::initTexts() {
 
   level_->init("LEVEL 1\0", { 450.0f, 60.0f });
   score_->init("SCORE 0\0", { 620.0f, 60.0f });
+}
+
+void EngineScene::initSprites() {
+
+  life_->init("data/assets/sprites/bar.png");
+  life_->set_scale({ 0.5f, 0.5f, 1.0f });
 }
 
 void EngineScene::initBrick(unsigned short int index,
@@ -335,6 +343,7 @@ void EngineScene::init() {
   // generate elements
   initMap();
   initTexts();
+  initSprites();
   levelDump(1);
 
   AUDIOMANAGER.playFX(0, 1.0f);
@@ -611,10 +620,8 @@ void EngineScene::renderLifes() {
   float x_offest = 46.0f;
 
   for (unsigned short int i = 0; i < lifes_amount_; i++){
-    Sprite lifes;
-    lifes.init("data/assets/sprites/bar.png", { x_offest, 50.0f, 1.0f });
-    lifes.set_scale({ 0.5f, 0.5f, 1.0f });
-    lifes.render();
+    life_->set_position({ x_offest, 50.0f, 1.0f });
+    life_->render();
     x_offest += 70.0f;
   }
 }
@@ -687,6 +694,10 @@ void EngineScene::debug() {
       bool freemode = game_state_.freemode_;
       ImGui::Checkbox("Free Mode", &freemode);
       game_state_.freemode_ = freemode;
+      ImGui::SameLine();
+      bool colliders = game_state_.drawcolliders_;
+      ImGui::Checkbox("Draw Colliders", &colliders);
+      game_state_.drawcolliders_ = colliders;
       ImGui::InputInt("Lifes", &lifes);
     }
     // space info
@@ -759,8 +770,8 @@ void EngineScene::debug() {
       cpSpaceSetDamping(game_state_.space_, 1.0f);
 
       // reset bar
-      bar_position = { lua_->getNumberFromTable("bar_settings", "x"),
-                       lua_->getNumberFromTable("bar_settings", "y"),
+      bar_position = { lua_->getNumberFromTable("bar_settings", "cbar_x"),
+                       lua_->getNumberFromTable("bar_settings", "cbar_y"),
                        1.0 };
       bar_velocity = gtmath::Vec3Zero();
       bar_angle = 0.0f;
@@ -795,8 +806,32 @@ void EngineScene::debug() {
     ImGui::End();
     ImGui::Render();
 
-    // game state get values
+    // game state set values
     lifes_amount_ = lifes;
+    if (game_state_.drawcolliders_){
+      game_state_.cbar_->drawCollider(true);
+      game_state_.lbar_->drawCollider(true);
+      game_state_.rbar_->drawCollider(true);
+      game_state_.ball_->drawCollider(true);
+      for (unsigned short int i = 0; i < 4; i++){
+        game_state_.walls_[i]->drawCollider(true);
+      }
+      for (unsigned short int i = 0; i < game_state_.bricks_.size(); i++){
+        game_state_.bricks_[i].handle_->drawCollider(true);
+      }
+    }
+    else {
+      game_state_.cbar_->drawCollider(false);
+      game_state_.lbar_->drawCollider(false);
+      game_state_.rbar_->drawCollider(false);
+      game_state_.ball_->drawCollider(false);
+      for (unsigned short int i = 0; i < 4; i++){
+        game_state_.walls_[i]->drawCollider(false);
+      }
+      for (unsigned short int i = 0; i < game_state_.bricks_.size(); i++){
+        game_state_.bricks_[i].handle_->drawCollider(false);
+      }
+    }
 
     // space set values
     cpSpaceSetGravity(game_state_.space_, { space_gravity.x, space_gravity.y });
@@ -893,6 +928,19 @@ void EngineScene::set_scoreAmount(unsigned short int score) {
 }
 
 /** reseters **/
+void EngineScene::resetBricks() {
+
+  for (unsigned short int i = 0; i < game_state_.bricks_.size(); i++){
+    game_state_.bricks_[i].handle_->set_position(
+        { game_state_.bricks_[i].handle_->position().x - 1000.0f,
+          game_state_.bricks_[i].handle_->position().y,
+          1.0f });
+    game_state_.bricks_[i].handle_->removeBody();
+  }
+
+  game_state_.bricks_.clear();
+}
+
 void EngineScene::resetLevel() {
 
   teleportObject(game_state_.cbar_,
@@ -914,18 +962,15 @@ void EngineScene::resetLevel() {
 
 void EngineScene::nextLevel() {
 
-  for (unsigned short int i = 0; i < game_state_.bricks_.size(); i++){
-    game_state_.bricks_[i].is_active_ = false;
-    game_state_.bricks_[i].handle_->removeBody();
-  }
-  game_state_.bricks_.clear();
-  current_level_++;
+  resetBricks();
   resetLevel();
+  current_level_++;
   levelDump(current_level_);
 }
 
 void EngineScene::resetGame(unsigned short int level) {
 
+  resetBricks();
   lifes_amount_ = 3;
   score_amount_ = 0;
   set_scoreAmount(0);
@@ -967,7 +1012,9 @@ EngineScene::~EngineScene() {
   delete lua_;
   delete level_;
   delete score_;
+  delete life_;
   lua_ = nullptr;
   level_ = nullptr;
   score_ = nullptr;
+  life_ = nullptr;
 }

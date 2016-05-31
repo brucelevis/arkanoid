@@ -3,9 +3,7 @@
  * @project Arkanoid
  * @brief Main
  * @author Toni Marquez
- * @fixes ! reset game not working
- *        > lifes not drawing
- *        / powerups
+ * @fixes / powerups
  *
  **/
 
