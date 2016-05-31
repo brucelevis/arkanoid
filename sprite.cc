@@ -16,15 +16,6 @@ Sprite::Sprite() {
   centered_pivot_ = false;
 }
 
-/// copy constructor
-Sprite::Sprite(const Sprite& copy) {
-
-  handle_ = copy.handle_;
-  transform_ = copy.transform_;
-  sprintf(handle_path_, "%s", copy.handle_path_);
-  centered_pivot_ = copy.centered_pivot_;
-}
-
 /// init values
 void Sprite::init(const char* handle_path,
                   const gtmath::Vec3 position,

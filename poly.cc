@@ -1,14 +1,14 @@
 /**
  *
- * @brief Polygon Class
+ * @brief Poly Class
  * @author Toni Marquez
  *
  **/
 
-#include "polygon.h"
+#include "poly.h"
 
 /// constructor
-Polygon::Polygon() {
+Poly::Poly() {
 
   num_verts_ = 0;
   transform_ = gtmath::IdentityMat3();
@@ -28,7 +28,7 @@ Polygon::Polygon() {
 
 /** init values  **/
 /// regular polygon
-void Polygon::init(const unsigned short int num_verts,
+void Poly::init(const unsigned short int num_verts,
                    const float radius,
                    const gtmath::Vec3 position,
                    const gtmath::Vec3 scale,
@@ -62,7 +62,7 @@ void Polygon::init(const unsigned short int num_verts,
 }
 
 /// free polygon
-void Polygon::init(const unsigned short int num_verts,
+void Poly::init(const unsigned short int num_verts,
                    const gtmath::Vec3* verts,
                    const gtmath::Vec3 position,
                    const gtmath::Vec3 scale,
@@ -88,7 +88,7 @@ void Polygon::init(const unsigned short int num_verts,
 }
 
 /// calculate transform
-void Polygon::calculateTransform() {
+void Poly::calculateTransform() {
 
   transform_ = gtmath::IdentityMat3();
   transform_ = gtmath::MultiMat3XMat3(transform_,
@@ -101,7 +101,7 @@ void Polygon::calculateTransform() {
 }
 
 /// draw on screen
-void Polygon::render() {
+void Poly::render() {
 
   gtmath::Vec3 temp_point;
 
@@ -126,84 +126,84 @@ void Polygon::render() {
 }
 
 /** functions **/
-void Polygon::translate(const gtmath::Vec3 translation) {
+void Poly::translate(const gtmath::Vec3 translation) {
 
   position_ += translation;
   calculateTransform();
 }
 
-void Polygon::scale(const gtmath::Vec3 scalation) {
+void Poly::scale(const gtmath::Vec3 scalation) {
 
   scale_ += scalation;
   calculateTransform();
 }
 
-void Polygon::rotate(const float rotation) {
+void Poly::rotate(const float rotation) {
 
   rotation_ += rotation;
   calculateTransform();
 }
 
 /** setters **/
-void Polygon::set_position(const gtmath::Vec3 position) {
+void Poly::set_position(const gtmath::Vec3 position) {
 
   position_ = position;
   calculateTransform();
 }
 
-void Polygon::set_scale(const gtmath::Vec3 scale) {
+void Poly::set_scale(const gtmath::Vec3 scale) {
 
   scale_ = scale;
   calculateTransform();
 }
 
-void Polygon::set_rotation(const float rotation) {
+void Poly::set_rotation(const float rotation) {
 
   rotation_ = rotation;
   calculateTransform();
 }
 
-void Polygon::set_color(const gtmath::Vec3 color) {
+void Poly::set_color(const gtmath::Vec3 color) {
 
   color_[0] = color.x;
   color_[1] = color.y;
   color_[2] = color.z;
 }
 
-void Polygon::set_alpha(const unsigned char alpha) {
+void Poly::set_alpha(const unsigned char alpha) {
 
   alpha_ = alpha;
 }
 
 /** getters **/
-const gtmath::Vec3 Polygon::position() {
+const gtmath::Vec3 Poly::position() {
 
   return position_;
 }
 
-const gtmath::Vec3 Polygon::scale() {
+const gtmath::Vec3 Poly::scale() {
 
   return scale_;
 }
 
-const float Polygon::rotation() {
+const float Poly::rotation() {
 
   return rotation_;
 }
 
-const float Polygon::radius() {
+const float Poly::radius() {
 
   return radius_;
 }
 
 /// draw lines
-void Polygon::drawLines(const bool enabled) {
+void Poly::drawLines(const bool enabled) {
 
   draw_lines_ = enabled;
 }
 
 /// destructor
-Polygon::~Polygon() {
+Poly::~Poly() {
 
   free(verts_);
   free(points_);

@@ -11,12 +11,14 @@ kNormalWindowWidth = 800;
 kNormalWindowHeight = 800;
 kDebugWindowWidth = 1200;
 kDebugWindowHeight = 800;
-kSleepTime = 16.0;
+kSleepTime = 16.0; -- not using
 
 -- bar
 bar_settings = {
-  x = 400.0,
-  y = 700.0,
+  cbar_x = 400.0,
+  cbar_y = 700.0,
+  lbar_x = 370.0,
+  rbar_x = 430.0,
   mass = 0.5,
   friction = 0.0,
   elasticity = 1.0,

@@ -20,18 +20,16 @@ class Text {
 
   public:
 
-    /// constructor
+    /// constructor & destructor
     Text();
-
-    /// destructor
     ~Text();
 
     /// init values
-    void init(const char* text = "none\0",
+    void init(const char* text = "none",
               const gtmath::Point position = { 0.0f, 0.0f },
               const unsigned short int size = 25,
               const gtmath::Vec3 color = { 255.0f, 255.0f, 255.0f },
-              const char* font = "data/assets/fonts/04B.ttf\0");
+              const char* font = "data/assets/fonts/04B.ttf");
 
     /// draw on screen
     void render();

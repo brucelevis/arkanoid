@@ -207,6 +207,6 @@ void LuaWrapper::close() {
 /// destructor
 LuaWrapper::~LuaWrapper() {
 
-  lua_close(LUA_);
+  //lua_close(LUA_);
   LUA_ = nullptr;
 }

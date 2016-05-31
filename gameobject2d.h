@@ -2,7 +2,7 @@
  *
  * @brief GameObject2D Header
  * @author Toni Marquez
- * @fixes - joints & constrains
+ * @fixes / joints
  *
  **/
 
@@ -16,17 +16,8 @@
 
 #include "gtmath.h"
 #include "box.h"
-#include "polygon.h"
+#include "poly.h"
 #include "sprite.h"
-
-static enum BodyType {
-  kBodyType_None = 0,
-  kBodyType_Segment,
-  kBodyType_Box,
-  kBodyType_Polygon,
-  kBodyType_Circle,
-  kBodyType_Sprite
-};
 
 static enum BodyKind {
   kBodyKind_None = 0,
@@ -35,14 +26,20 @@ static enum BodyKind {
   kBodyKind_Static
 };
 
+static enum BodyType {
+  kBodyType_None = 0,
+  kBodyType_Segment,
+  kBodyType_Box,
+  kBodyType_Circle,
+  kBodyType_Polygon
+};
+
 class GameObject2D {
 
   public:
 
-    /// constructor
+    /// constructor & destructor
     GameObject2D();
-
-    /// destructor
     ~GameObject2D();
 
     /// init values
@@ -95,34 +92,32 @@ class GameObject2D {
                     const float mass = 10.0f,
                     const float friction = 0.5f,
                     const float radius = 1.0f);
-    /// polygon regular body
-    void addBodyPoly(const unsigned short int num_verts = 10,
-                     const float size = 50.0f,
-                     const gtmath::Vec3 position = { 0.0f, 0.0f, 1.0f },
-                     const float mass = 10.0f,
-                     const float friction = 0.5f,
-                     const float radius = 1.0f);
-    /// polygon free body
-    void addBodyPolyFree(const unsigned short int num_verts,
-                         const gtmath::Vec3* verts,
-                         const gtmath::Vec3 position = { 0.0f, 0.0f, 1.0f },
-                         const float mass = 10.0f,
-                         const float friction = 0.5f,
-                         const float radius = 1.0f);
-    /// sprite body
-    void addBodySprite(const char* path,
+    void addBodyBox(const char* path,
+                    const gtmath::Vec3 position = { 0.0f, 0.0f, 1.0f },
+                    const float mass = 10.0f,
+                    const float friction = 0.5f,
+                    const float radius = 1.0f);
+    /// circle body
+    void addBodyCircle(const unsigned short int num_verts = 10,
+                       const float size = 50.0f,
                        const gtmath::Vec3 position = { 0.0f, 0.0f, 1.0f },
                        const float mass = 10.0f,
                        const float friction = 0.5f,
                        const float radius = 1.0f);
-    /// sprite body multiple shapes
-    /*
-    void addBodySpriteJoint(const char* path,
-                            const gtmath::Vec3 position = { 0.0f, 0.0f, 1.0f },
-                            const float mass = 10.0f,
-                            const float friction = 0.5f,
-                            const float radius = 1.0f);
-                            */
+    void addBodyCircle(const char* path,
+                       const unsigned short int num_verts = 10,
+                       const float size = 50.0f,
+                       const gtmath::Vec3 position = { 0.0f, 0.0f, 1.0f },
+                       const float mass = 10.0f,
+                       const float friction = 0.5f,
+                       const float radius = 1.0f);
+    /// polygon free body
+    void addBodyPoly(const unsigned short int num_verts,
+                     const gtmath::Vec3* verts,
+                     const gtmath::Vec3 position = { 0.0f, 0.0f, 1.0f },
+                     const float mass = 10.0f,
+                     const float friction = 0.5f,
+                     const float radius = 1.0f);
 
     /**
      * @brief update object position and render it
@@ -159,8 +154,11 @@ class GameObject2D {
     const float width();
     const float height();
     const unsigned short int numVerts();
-    const gtmath::Vec3 vert(unsigned short int index);
+    const gtmath::Vec3 vert(unsigned short int vert);
     const unsigned short int tag();
+
+    /// draw collider
+    void drawCollider(const bool enabled);
 
     /// delete body from space
     void removeBody();
@@ -176,14 +174,15 @@ class GameObject2D {
     cpBody* body_;
     cpShape* shape_;
     Box* box_;
-    Polygon* poly_;
+    Poly* poly_;
     Sprite* sprite_;
-    BodyType body_type_;
     BodyKind body_kind_;
+    BodyType body_type_;
     gtmath::Vec3 pointA_;
     gtmath::Vec3 pointB_;
     unsigned short int tag_;
     float moment_;
+    bool has_sprite_;
     bool is_visible_;
     bool is_infinity_;
 };

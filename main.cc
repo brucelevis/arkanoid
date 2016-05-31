@@ -3,10 +3,9 @@
  * @project Arkanoid
  * @brief Main
  * @author Toni Marquez
- * @fixes > improve bar movement
- *        / joints
+ * @fixes ! reset game not working
+ *        > lifes not drawing
  *        / powerups
- *        ? memory leak (slow frame rate) + free bricks memory
  *
  **/
 
@@ -75,8 +74,10 @@ int ESAT::main(int argc, char** argv){
     GAMEMANAGER.engine_scene_->update(delta_time);
     GAMEMANAGER.engine_scene_->render();
 
+    /*
     double sleep = GAMEMANAGER.sleepMS() - (ESAT::Time() - tick);
     if (sleep > 0.0f){ ESAT::Sleep(sleep); }
+    */
     last_time = tick;
   }
 

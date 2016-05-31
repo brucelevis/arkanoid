@@ -32,6 +32,7 @@ Box::Box() {
   color_[0] = 0;
   color_[2] = 0;
   alpha_ = 0;
+  draw_lines_ = false;
   filled_ = false;
 }
 
@@ -91,7 +92,10 @@ void Box::render() {
   points_[8] = points_[0];
   points_[9] = points_[1];
 
-  ESAT::DrawSetStrokeColor(color_[0], color_[1], color_[2], alpha_);
+  if (draw_lines_){
+    ESAT::DrawSetStrokeColor(color_[0], color_[1], color_[2], alpha_);
+  }
+  else { ESAT::DrawSetStrokeColor(color_[0], color_[1], color_[2], 0); }
   if (filled_){
     ESAT::DrawSetFillColor(color_[0], color_[1], color_[2], alpha_);
   }
@@ -173,6 +177,12 @@ const float Box::width() {
 const float Box::height() {
 
   return height_;
+}
+
+/// draw lines
+void Box::drawLines(const bool enabled) {
+
+  draw_lines_ = enabled;
 }
 
 /// destructor

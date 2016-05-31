@@ -20,16 +20,11 @@ class Polygon {
 
   public:
 
-    /// constructor
+    /// constructor & destructor
     Polygon();
-
-    /// copy constructor
-    Polygon(const Polygon& copy);
-
-    /// destructor
     ~Polygon();
 
-    /** init values (overloaded) **/
+    /** init values **/
     /// regular polygon
     void init(const unsigned short int num_verts = 10,
               const float radius = 50.0f,
@@ -45,7 +40,7 @@ class Polygon {
               const gtmath::Vec3 position = { 0.0f, 0.0f, 1.0f },
               const gtmath::Vec3 scale = { 1.0f, 1.0f, 1.0f },
               const float rotation = 0.0f,
-              const gtmath::Vec3 color = { 255.0f, 255.0f, 255.0f },
+              const gtmath::Vec3 color = { 100.0f, 220.0f, 125.0f },
               const unsigned char alpha = 255);
 
     /// calculate transform
@@ -72,7 +67,14 @@ class Polygon {
     const float rotation();
     const float radius();
 
+    /// draw lines
+    void drawLines(const bool enabled);
+
   private:
+
+    /// copy constructor
+    Polygon(const Polygon& copy);
+    Polygon operator=(const Polygon& copy);
 
     /// private vars
     unsigned short int num_verts_;
@@ -85,6 +87,7 @@ class Polygon {
     float* points_;
     unsigned char color_[3];
     unsigned char alpha_;
+    bool draw_lines_;
     bool filled_;
 };
 

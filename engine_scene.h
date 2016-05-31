@@ -10,6 +10,9 @@
 #define __ENGINESCENE_H__ 1
 
 #include <string>
+#include <vector>
+#include <windows.h>
+#include <xinput.h>
 
 #include <ESAT/window.h>
 #include <ESAT/input.h>
@@ -26,16 +29,18 @@
 #include "text.h"
 #include "sprite.h"
 #include "gameobject2d.h"
+#include "gamepad.h"
 
 #define GAMEMANAGER GameManager::instance()
 #define AUDIOMANAGER AudioManager::instance()
-#define BAR_TAG 1
-#define BALL_TAG 2
-#define WALL_TAG 3
-#define LIMIT_TAG 4
-#define POWERUP_TAG 5
+#define BALL_TAG 1
+#define CBAR_TAG 2
+#define LBAR_TAG 3
+#define RBAR_TAG 4
+#define WALL_TAG 5
+#define LIMIT_TAG 6
+#define POWERUP_TAG 7
 
-static const unsigned short int kNumLevels = 3;
 static const unsigned short int kGridCols = 10;
 static const unsigned short int kGridRows = 7;
 
@@ -50,14 +55,17 @@ struct Brick {
   GameObject2D* handle_;
   unsigned short int type_; // 1 = normal, 2 = double
   bool is_active_;
+  bool must_die_;
 };
 
 struct GameState {
   cpSpace* space_;
-  GameObject2D* bar_;
+  GameObject2D* cbar_;
+  GameObject2D* lbar_;
+  GameObject2D* rbar_;
   GameObject2D* ball_;
   GameObject2D* walls_[4];
-  Brick* bricks_;
+  std::vector<Brick> bricks_;
   unsigned short int bricks_amount_;
   // 0 = not update, 1 = score, 2 = die, 3 = bounce, 4 = powerup
   unsigned short int updating_;
@@ -114,6 +122,7 @@ class EngineScene {
 
     /** reseters **/
     void resetLevel();
+    void nextLevel();
     void resetGame(unsigned short int level);
 
     /**
@@ -147,6 +156,7 @@ class EngineScene {
 
     /// private vars
     GameStatus game_status_;
+    Gamepad* gamepad_;
     LuaWrapper* lua_;
     Text* level_;
     Text* score_;

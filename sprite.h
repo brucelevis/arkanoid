@@ -22,17 +22,12 @@ class Sprite {
 
   public:
 
-    /// constructor
+    /// constructor & destructor
     Sprite();
-
-    /// copy constructor
-    Sprite(const Sprite& copy);
-
-    /// destructor
     ~Sprite();
 
     /// init values
-    void init(const char* handle_path = "data/assets/sprites/sample.png\0",
+    void init(const char* handle_path = "data/assets/sprites/sample.png",
               const gtmath::Vec3 position = { 0.0f, 0.0f, 1.0f },
               const bool centered_pivot = true);
 
@@ -52,6 +47,10 @@ class Sprite {
     const gtmath::Vec3 position();
 
   private:
+
+    /// copy constructor
+    Sprite(const Sprite& copy);
+    Sprite operator=(const Sprite& copy);
 
     /// private vars
     ESAT::SpriteHandle handle_;

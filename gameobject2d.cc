@@ -22,6 +22,7 @@ GameObject2D::GameObject2D() {
   pointB_ = gtmath::Vec3Zero();
   tag_ = 0;
   moment_ = 0.0f;
+  has_sprite_ = false;
   is_visible_ = false;
   is_infinity_ = false;
 }
@@ -82,8 +83,7 @@ void GameObject2D::addBodyBox(const float width,
 
   body_type_ = kBodyType_Box;
 
-  shape_ = cpSpaceAddShape(space_,
-                           cpBoxShapeNew(body_, width, height, radius));
+  shape_ = cpSpaceAddShape(space_, cpBoxShapeNew(body_, width, height, radius));
   if (body_kind_ == kBodyKind_Dynamic){ cpShapeSetMass(shape_, mass); }
   cpShapeSetFriction(shape_, friction);
   cpBodySetPosition(body_, { position.x, position.y });
@@ -92,22 +92,43 @@ void GameObject2D::addBodyBox(const float width,
   box_->init(width, height);
 }
 
-/// polygon regular shape
-void GameObject2D::addBodyPoly(const unsigned short int num_verts,
-                               const float size,
-                               const gtmath::Vec3 position,
-                               const float mass,
-                               const float friction,
-                               const float radius) {
+void GameObject2D::addBodyBox(const char* path,
+                              const gtmath::Vec3 position,
+                              const float mass,
+                              const float friction,
+                              const float radius) {
 
-  cpVect* points;
+  body_type_ = kBodyType_Box;
+  has_sprite_ = true;
+
+  sprite_ = new Sprite();
+  sprite_->init(path, position);
+
+  shape_ = cpSpaceAddShape(space_, cpBoxShapeNew(body_,
+                                                 sprite_->width(),
+                                                 sprite_->height(),
+                                                 radius));
+  if (body_kind_ == kBodyKind_Dynamic){ cpShapeSetMass(shape_, mass); }
+  cpShapeSetFriction(shape_, friction);
+  cpBodySetPosition(body_, { position.x, position.y });
+
+  box_ = new Box();
+  box_->init(sprite_->width(), sprite_->height());
+}
+
+/// polygon regular shape
+void GameObject2D::addBodyCircle(const unsigned short int num_verts,
+                                 const float size,
+                                 const gtmath::Vec3 position,
+                                 const float mass,
+                                 const float friction,
+                                 const float radius) {
 
   body_type_ = kBodyType_Polygon;
 
-  points = (cpVect*)malloc(sizeof(cpVect) * num_verts);
+  cpVect* points = new cpVect[num_verts];
 
   for (unsigned short int i = 0; i < num_verts; i++){
-
     points[i].x = size * cos(2 * kPid * i / num_verts);
     points[i].y = size * sin(2 * kPid * i / num_verts);
   }
@@ -117,33 +138,67 @@ void GameObject2D::addBodyPoly(const unsigned short int num_verts,
                                                      points,
                                                      radius));
 
+  delete points;
+  points = nullptr;
+
   if (body_kind_ == kBodyKind_Dynamic){ cpShapeSetMass(shape_, mass); }
   cpShapeSetFriction(shape_, friction);
   cpBodySetPosition(body_, { position.x, position.y });
 
-  poly_ = new Polygon();
+  poly_ = new Poly();
   poly_->init(num_verts, size);
+}
 
-  free(points);
+void GameObject2D::addBodyCircle(const char* path,
+                                 const unsigned short int num_verts,
+                                 const float size,
+                                 const gtmath::Vec3 position,
+                                 const float mass,
+                                 const float friction,
+                                 const float radius) {
+
+  body_type_ = kBodyType_Polygon;
+  has_sprite_ = true;
+
+  sprite_ = new Sprite();
+  sprite_->init(path, position);
+
+  cpVect* points = new cpVect[num_verts];
+
+  for (unsigned short int i = 0; i < num_verts; i++){
+    points[i].x = size * cos(2 * kPid * i / num_verts);
+    points[i].y = size * sin(2 * kPid * i / num_verts);
+  }
+
+  shape_ = cpSpaceAddShape(space_, cpPolyShapeNewRaw(body_,
+                                                     num_verts,
+                                                     points,
+                                                     radius));
+
+  delete points;
   points = nullptr;
+
+  if (body_kind_ == kBodyKind_Dynamic){ cpShapeSetMass(shape_, mass); }
+  cpShapeSetFriction(shape_, friction);
+  cpBodySetPosition(body_, { position.x, position.y });
+
+  poly_ = new Poly();
+  poly_->init(num_verts, size);
 }
 
 /// polygon free shape
-void GameObject2D::addBodyPolyFree(const unsigned short int num_verts,
-                                   const gtmath::Vec3* verts,
-                                   const gtmath::Vec3 position,
-                                   const float mass,
-                                   const float friction,
-                                   const float radius) {
-
-  cpVect* points;
+void GameObject2D::addBodyPoly(const unsigned short int num_verts,
+                               const gtmath::Vec3* verts,
+                               const gtmath::Vec3 position,
+                               const float mass,
+                               const float friction,
+                               const float radius) {
 
   body_type_ = kBodyType_Polygon;
 
-  points = (cpVect*)malloc(sizeof(cpVect) * num_verts);
+  cpVect* points = new cpVect[num_verts];
 
   for (unsigned short int i = 0; i < num_verts; i++){
-
     points[i].x = verts[i].x;
     points[i].y = verts[i].y;
   }
@@ -153,35 +208,15 @@ void GameObject2D::addBodyPolyFree(const unsigned short int num_verts,
                                                      points,
                                                      radius));
 
-  if (body_kind_ == kBodyKind_Dynamic){ cpShapeSetMass(shape_, mass); }
-  cpShapeSetFriction(shape_, friction);
-  cpBodySetPosition(body_, { position.x, position.y });
-
-  poly_ = new Polygon();
-  poly_->init(num_verts, verts);
-
-  free(points);
+  delete points;
   points = nullptr;
-}
 
-/// sprite body
-void GameObject2D::addBodySprite(const char* path,
-                                 const gtmath::Vec3 position,
-                                 const float mass,
-                                 const float friction,
-                                 const float radius) {
-
-  body_type_ = kBodyType_Sprite;
-
-  sprite_ = new Sprite();
-  sprite_->init(path, position);
-  cpBodySetPosition(body_, { position.x, position.y });
-  shape_ = cpSpaceAddShape(space_, cpBoxShapeNew(body_,
-                                                 sprite_->width(),
-                                                 sprite_->height(),
-                                                 radius));
   if (body_kind_ == kBodyKind_Dynamic){ cpShapeSetMass(shape_, mass); }
   cpShapeSetFriction(shape_, friction);
+  cpBodySetPosition(body_, { position.x, position.y });
+
+  poly_ = new Poly();
+  poly_->init(num_verts, verts);
 }
 
 /**
@@ -191,34 +226,38 @@ void GameObject2D::addBodySprite(const char* path,
  **/
 void GameObject2D::update() {
 
-  switch (body_type_){
-    case kBodyType_Segment: {
-      if (is_visible_){
-        ESAT::DrawSetStrokeColor(255, 255, 255, 255);
-        ESAT::DrawLine(pointA_.x, pointA_.y, pointB_.x, pointB_.y);
-      }
-    } break;
-    case kBodyType_Box: {
-      box_->set_position({ cpBodyGetPosition(body_).x,
-                           cpBodyGetPosition(body_).y,
-                           1.0f });
-      box_->set_rotation(cpBodyGetAngle(body_));
-      if (is_visible_){ box_->render(); }
-    } break;
-    case kBodyType_Polygon: {
-      poly_->set_position({ cpBodyGetPosition(body_).x,
-                            cpBodyGetPosition(body_).y,
-                            1.0f });
-      poly_->set_rotation(cpBodyGetAngle(body_));
-      if (is_visible_){ poly_->render(); }
-    } break;
-    case kBodyType_Sprite: {
+  if (body_ != nullptr){
+    switch (body_type_){
+      case kBodyType_Segment: {
+        if (is_visible_){
+          ESAT::DrawSetStrokeColor(255, 255, 255, 255);
+          ESAT::DrawLine(pointA_.x, pointA_.y, pointB_.x, pointB_.y);
+        }
+      } break;
+      case kBodyType_Box: {
+        box_->set_position({ cpBodyGetPosition(body_).x,
+                             cpBodyGetPosition(body_).y,
+                             1.0f });
+        box_->set_rotation(cpBodyGetAngle(body_));
+        if (is_visible_){ box_->render(); }
+      } break;
+      case kBodyType_Circle:
+      case kBodyType_Polygon: {
+        poly_->set_position({ cpBodyGetPosition(body_).x,
+                              cpBodyGetPosition(body_).y,
+                              1.0f });
+        poly_->set_rotation(cpBodyGetAngle(body_));
+        if (is_visible_){ poly_->render(); }
+      } break;
+    }
+
+    if (has_sprite_){
       sprite_->set_position({ cpBodyGetPosition(body_).x,
                               cpBodyGetPosition(body_).y,
                               1.0f });
       sprite_->set_rotation(cpBodyGetAngle(body_));
-      if (is_visible_){ sprite_->render(); }
-    } break;
+      sprite_->render();
+    }
   }
 }
 
@@ -237,11 +276,9 @@ void GameObject2D::set_position(const gtmath::Vec3 position) {
     case kBodyType_Box: {
       box_->set_position({ position.x, position.y, 1.0f });
     } break;
+    case kBodyType_Circle:
     case kBodyType_Polygon: {
       poly_->set_position({ position.x, position.y, 1.0f });
-    } break;
-    case kBodyType_Sprite: {
-      sprite_->set_position({ position.x, position.y, 1.0f });
     } break;
   }
 }
@@ -353,14 +390,12 @@ const bool GameObject2D::infinity() {
 const float GameObject2D::width() {
 
   if (body_type_ == kBodyType_Box){ return box_->width(); }
-  else if (body_type_ == kBodyType_Sprite){ return sprite_->width(); }
   else { return 0.0f; }
 }
 
 const float GameObject2D::height() {
 
   if (body_type_ == kBodyType_Box){ return box_->height(); }
-  else if (body_type_ == kBodyType_Sprite){ return sprite_->height(); }
   else { return 0.0f; }
 }
 
@@ -369,12 +404,12 @@ const unsigned short int GameObject2D::numVerts() {
   return cpPolyShapeGetCount(shape_);
 }
 
-const gtmath::Vec3 GameObject2D::vert(unsigned short int index) {
+const gtmath::Vec3 GameObject2D::vert(unsigned short int vert) {
 
-  gtmath::Vec3 vert = { cpPolyShapeGetVert(shape_, index).x,
-                        cpPolyShapeGetVert(shape_, index).y };
+  gtmath::Vec3 vertex = { cpPolyShapeGetVert(shape_, vert).x,
+                          cpPolyShapeGetVert(shape_, vert).y };
 
-  return vert;
+  return vertex;
 }
 
 const unsigned short int GameObject2D::tag() {
@@ -382,24 +417,61 @@ const unsigned short int GameObject2D::tag() {
   return cpShapeGetCollisionType(shape_);
 }
 
+/// draw collider
+void GameObject2D::drawCollider(const bool enabled) {
+
+  switch (body_type_){
+    case kBodyType_Box: {
+      if (enabled){ box_->drawLines(true); }
+      else { box_->drawLines(false); }
+    } break;
+    case kBodyType_Circle:
+    case kBodyType_Polygon: {
+      if (enabled){ poly_->drawLines(true); }
+      else { poly_->drawLines(false); }
+    } break;
+  }
+}
+
 /// delete body from space
 void GameObject2D::removeBody() {
 
-  cpShapeFree(shape_);
-  cpBodyFree(body_);
-  //cpSpaceRemoveBody(space_, body_);
+  if (shape_ != nullptr){
+    cpSpaceRemoveShape(space_, shape_);
+    cpShapeDestroy(shape_);
+    cpShapeFree(shape_);
+    shape_ = nullptr;
+  }
+
+  if (body_ != nullptr){
+    cpSpaceRemoveBody(space_, body_);
+    cpBodyDestroy(body_);
+    cpBodyFree(body_);
+    body_ = nullptr;
+  }
 }
 
 /// destructor
 GameObject2D::~GameObject2D() {
 
-  cpSpaceRemoveShape(space_, shape_);
-  cpSpaceRemoveBody(space_, body_);
-  cpShapeFree(shape_);
-  cpBodyFree(body_);
+  cpSpaceFree(space_);
+  if (shape_ != nullptr){
+    cpSpaceRemoveShape(space_, shape_);
+    cpShapeDestroy(shape_);
+    cpShapeFree(shape_);
+    shape_ = nullptr;
+  }
+  if (body_ != nullptr){
+    cpSpaceRemoveBody(space_, body_);
+    cpBodyDestroy(body_);
+    cpBodyFree(body_);
+    body_ = nullptr;
+  }
+  delete box_;
+  delete poly_;
+  delete sprite_;
   space_ = nullptr;
-  body_ = nullptr;
-  shape_ = nullptr;
   box_ = nullptr;
   poly_ = nullptr;
+  sprite_ = nullptr;
 }
