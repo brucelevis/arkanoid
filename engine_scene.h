@@ -168,6 +168,7 @@ class EngineScene {
     unsigned short int lifes_amount_;
     unsigned short int score_amount_;
     float bar_max_speed_;
+    float bar_sprint_max_speed_;
     float bar_speed_;
     float bar_friction_;
     float ball_speed_;

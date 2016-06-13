@@ -114,6 +114,7 @@ EngineScene::EngineScene() {
   lifes_amount_ = 0;
   score_amount_ = 0;
   bar_max_speed_ = 0.0f;
+  bar_sprint_max_speed_ = 0.0f;
   bar_speed_ = 0.0f;
   bar_friction_ = 0.0f;
   ball_speed_ = 0.0f;
@@ -210,6 +211,8 @@ void EngineScene::initMap() {
   game_state_.rbar_->set_tag(RBAR_TAG);
 
   bar_max_speed_ = lua_->getNumberFromTable("bar_settings", "max_speed");
+  bar_sprint_max_speed_ = lua_->getNumberFromTable("bar_settings",
+                                                   "sprint_max_speed");
   bar_friction_ = lua_->getNumberFromTable("bar_settings", "air_friction");
 
   // ball
@@ -371,10 +374,16 @@ void EngineScene::input() {
           game_status_ = kGameStatus_Playing;
         }
         else if (gamepad_->getLStickPosition().x != 0.0f){
-          float speed = bar_max_speed_ * gamepad_->getLStickPosition().x;
+          float speed = 0.0f;
+          if (gamepad_->getLTrigger() > 0.0f){
+            speed = bar_sprint_max_speed_ * gamepad_->getLStickPosition().x;
+          }
+          else { speed = bar_max_speed_ * gamepad_->getLStickPosition().x; }
           bar_velocity_ = gtmath::Vec3Right() * speed;
         }
-        else { bar_velocity_ = bar_velocity_ * bar_friction_; }
+        else {
+          bar_velocity_ = bar_velocity_ * bar_friction_;
+        }
       }
       // using keyboard
       else {
@@ -429,7 +438,11 @@ void EngineScene::input() {
             //!!! powerup reserved
           }
           else if (gamepad_->getLStickPosition().x != 0.0f){
-            float speed = bar_max_speed_ * gamepad_->getLStickPosition().x;
+            float speed = 0.0f;
+            if (gamepad_->getLTrigger() > 0.0f){
+              speed = bar_sprint_max_speed_ * gamepad_->getLStickPosition().x;
+            }
+            else { speed = bar_max_speed_ * gamepad_->getLStickPosition().x; }
             bar_velocity_ = gtmath::Vec3Right() * speed;
           }
           else { bar_velocity_ = bar_velocity_ * bar_friction_; }

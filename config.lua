@@ -24,6 +24,7 @@ bar_settings = {
   elasticity = 1.0,
   infinity = true,
   max_speed = 500.0,
+  sprint_max_speed = 1000.0,
   air_friction = 0.98
 };
 
